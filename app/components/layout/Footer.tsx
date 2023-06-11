@@ -28,7 +28,7 @@ function Copyright(props: { sx?: SxProps }) {
         fontWeight={700}
         textAlign="center"
       >
-        C&apos;mon, AI, check my skills © 2023
+        Career Bro w/ AI © 2023
       </Typography>
       <Typography
         color="primary.contrastText"
@@ -36,8 +36,7 @@ function Copyright(props: { sx?: SxProps }) {
         textAlign="center"
         mt={0.5}
       >
-        ⚡ Check your skills with AI interviewers and earn experience points for
-        your resume
+        💪 AI assistant for building a great resume and getting the dream job
       </Typography>
     </Container>
   );

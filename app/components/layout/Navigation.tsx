@@ -51,7 +51,7 @@ function Logo(props: { sx?: SxProps }) {
           fontWeight={700}
           display={{ xs: "none", md: "flex" }}
         >
-          🤹 C&apos;mon, AI, check my skills
+          💪 Career Bro w/ AI
         </MuiLink>
       </Link>
       <Link href="/" passHref legacyBehavior>
@@ -61,7 +61,7 @@ function Logo(props: { sx?: SxProps }) {
           fontWeight={700}
           display={{ xs: "flex", md: "none" }}
         >
-          🤹
+          💪 Bro
         </MuiLink>
       </Link>
     </Box>
@@ -73,15 +73,18 @@ function Links(props: { sx?: SxProps }) {
 
   return (
     <Box sx={{ display: "flex", alignItems: "center", ...props.sx }}>
-      <Link href="/#interviewers" passHref legacyBehavior>
-        <MuiLink
-          fontWeight={700}
-          color="inherit"
-          display={{ xs: "none", sm: "flex" }}
-        >
-          Interviewers
-        </MuiLink>
-      </Link>
+      {isConnected && (
+        <Link href={`/accounts/${address}`} passHref legacyBehavior>
+          <MuiLink
+            fontWeight={700}
+            color="inherit"
+            display={{ xs: "none", sm: "flex" }}
+            ml={4}
+          >
+            Account
+          </MuiLink>
+        </Link>
+      )}
       <Link href="/accounts" passHref legacyBehavior>
         <MuiLink
           fontWeight={700}
@@ -92,24 +95,8 @@ function Links(props: { sx?: SxProps }) {
           Explore
         </MuiLink>
       </Link>
-      {isConnected && (
-        <Link href={`/accounts/${address}`} passHref legacyBehavior>
-          <MuiLink
-            fontWeight={700}
-            color="inherit"
-            display={{ xs: "none", sm: "flex" }}
-            ml={4}
-          >
-            My resume
-          </MuiLink>
-        </Link>
-      )}
       <Box ml={3.5}>
-        <ConnectButton
-          showBalance={false}
-          // accountStatus="avatar"
-          chainStatus="icon"
-        />
+        <ConnectButton showBalance={false} chainStatus="icon" />
       </Box>
       <IconButton
         component="a"
@@ -121,9 +108,8 @@ function Links(props: { sx?: SxProps }) {
         <GitHub fontSize="small" />
       </IconButton>
       <NavigationMenu
-        displayInterviewersLink
         displayExploreLink
-        displayResumeLink
+        displayAccountLink
         sx={{ display: { xs: "flex", sm: "none" }, ml: 1.5 }}
       />
     </Box>
@@ -131,9 +117,8 @@ function Links(props: { sx?: SxProps }) {
 }
 
 function NavigationMenu(props: {
-  displayInterviewersLink?: boolean;
+  displayAccountLink?: boolean;
   displayExploreLink?: boolean;
-  displayResumeLink?: boolean;
   sx?: SxProps;
 }) {
   const { isConnected, address } = useAccount();
@@ -194,19 +179,14 @@ function NavigationMenu(props: {
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
-        {props.displayInterviewersLink && (
-          <Link href="/#interviewers" passHref legacyBehavior>
-            <MenuItem>Interviewers</MenuItem>
+        {props.displayAccountLink && isConnected && (
+          <Link href={`/accounts/${address}`} passHref legacyBehavior>
+            <MenuItem>Account</MenuItem>
           </Link>
         )}
         {props.displayExploreLink && (
           <Link href="/accounts" passHref legacyBehavior>
             <MenuItem>Explore</MenuItem>
-          </Link>
-        )}
-        {props.displayResumeLink && isConnected && (
-          <Link href={`/accounts/${address}`} passHref legacyBehavior>
-            <MenuItem>My resume</MenuItem>
           </Link>
         )}
         <Divider />

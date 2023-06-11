@@ -22,7 +22,7 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
 );
 
 const { connectors } = getDefaultWallets({
-  appName: "C'mon, AI, check my skills",
+  appName: "Career Bro w/ AI",
   chains,
 });
 

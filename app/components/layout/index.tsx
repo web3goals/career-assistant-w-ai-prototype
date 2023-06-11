@@ -18,7 +18,7 @@ export default function Layout(props: {
     <Box>
       <CssBaseline />
       <Head>
-        <title>C&apos;mon, AI, check my skills</title>
+        <title>Career Bro w/ AI</title>
         <meta name="viewport" content="initial-scale=1, width=device-width" />
       </Head>
       <Navigation />

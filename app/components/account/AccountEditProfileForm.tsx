@@ -157,7 +157,7 @@ export default function AccountEditProfileForm(props: {
         imageIpfsUri = uri;
       }
       const profileUriData: ProfileUriData = {
-        name: "AI Interviewer - Profile",
+        name: "AI Career Bro - Profile",
         image: imageIpfsUri || props.profileData?.image || "",
         attributes: [
           { trait_type: "name", value: values.name },
