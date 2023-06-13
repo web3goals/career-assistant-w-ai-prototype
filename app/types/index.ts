@@ -1,22 +1,19 @@
-export type Interviewer = {
-  id: number;
-  name: string;
+export type InterviewTopic = {
+  id: string;
   title: string;
-  titleAlt: string;
-  subtitle: string;
   image: string;
   imageAlt: string;
   prompt: string;
 };
 
 export type InterviewMessage = {
-  id: string; // Combination of interview id and message id
-  interviewId: string;
-  messageId: number;
-  date: number;
+  id: string; // Combination of interview and timestamp
+  interview: string;
+  timestamp: number;
   role: "system" | "assistant" | "user";
   content: string;
   points: number;
+  isSaved: boolean;
 };
 
 export type ProfileUriData = {

@@ -1,48 +1,18 @@
 export const interviewContractAbi = [
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "oracle",
-        type: "address",
-      },
-    ],
+    inputs: [],
     stateMutability: "nonpayable",
     type: "constructor",
   },
   {
-    inputs: [],
-    name: "EmptyArgs",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "EmptySecrets",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "EmptySource",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "NoInlineSecrets",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "RequestIsAlreadyPending",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "RequestIsNotPending",
-    type: "error",
-  },
-  {
-    inputs: [],
-    name: "SenderIsNotRegistry",
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "chainid",
+        type: "uint256",
+      },
+    ],
+    name: "ChainNotSupported",
     type: "error",
   },
   {
@@ -119,93 +89,6 @@ export const interviewContractAbi = [
     inputs: [
       {
         indexed: true,
-        internalType: "bytes32",
-        name: "id",
-        type: "bytes32",
-      },
-    ],
-    name: "RequestFulfilled",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "bytes32",
-        name: "id",
-        type: "bytes32",
-      },
-    ],
-    name: "RequestSent",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "bytes32",
-        name: "requestId",
-        type: "bytes32",
-      },
-      {
-        indexed: false,
-        internalType: "bytes",
-        name: "result",
-        type: "bytes",
-      },
-      {
-        indexed: false,
-        internalType: "bytes",
-        name: "err",
-        type: "bytes",
-      },
-    ],
-    name: "ResponseReceived",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "uint256",
-        name: "tokenId",
-        type: "uint256",
-      },
-      {
-        components: [
-          {
-            internalType: "uint256",
-            name: "started",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "interviewer",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "points",
-            type: "uint256",
-          },
-        ],
-        indexed: false,
-        internalType: "struct Interview.Params",
-        name: "params",
-        type: "tuple",
-      },
-    ],
-    name: "Started",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
         internalType: "address",
         name: "from",
         type: "address",
@@ -227,40 +110,17 @@ export const interviewContractAbi = [
     type: "event",
   },
   {
-    anonymous: false,
-    inputs: [
+    inputs: [],
+    name: "_tableId",
+    outputs: [
       {
-        indexed: true,
         internalType: "uint256",
-        name: "tokenId",
+        name: "",
         type: "uint256",
       },
-      {
-        components: [
-          {
-            internalType: "uint256",
-            name: "started",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "interviewer",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "points",
-            type: "uint256",
-          },
-        ],
-        indexed: false,
-        internalType: "struct Interview.Params",
-        name: "params",
-        type: "tuple",
-      },
     ],
-    name: "Updated",
-    type: "event",
+    stateMutability: "view",
+    type: "function",
   },
   {
     inputs: [
@@ -302,124 +162,14 @@ export const interviewContractAbi = [
   {
     inputs: [
       {
-        components: [
-          {
-            internalType: "enum Functions.Location",
-            name: "codeLocation",
-            type: "uint8",
-          },
-          {
-            internalType: "enum Functions.Location",
-            name: "secretsLocation",
-            type: "uint8",
-          },
-          {
-            internalType: "enum Functions.CodeLanguage",
-            name: "language",
-            type: "uint8",
-          },
-          {
-            internalType: "string",
-            name: "source",
-            type: "string",
-          },
-          {
-            internalType: "bytes",
-            name: "secrets",
-            type: "bytes",
-          },
-          {
-            internalType: "string[]",
-            name: "args",
-            type: "string[]",
-          },
-        ],
-        internalType: "struct Functions.Request",
-        name: "req",
-        type: "tuple",
-      },
-      {
-        internalType: "uint64",
-        name: "subscriptionId",
-        type: "uint64",
-      },
-      {
-        internalType: "uint32",
-        name: "gasLimit",
-        type: "uint32",
-      },
-      {
-        internalType: "uint256",
-        name: "gasPrice",
-        type: "uint256",
-      },
-    ],
-    name: "estimateCost",
-    outputs: [
-      {
-        internalType: "uint96",
-        name: "",
-        type: "uint96",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "tokenId",
-        type: "uint256",
-      },
-      {
-        internalType: "string",
-        name: "source",
-        type: "string",
-      },
-      {
-        internalType: "bytes",
-        name: "secrets",
-        type: "bytes",
-      },
-      {
-        internalType: "string[]",
-        name: "args",
-        type: "string[]",
-      },
-      {
-        internalType: "uint64",
-        name: "subscriptionId",
-        type: "uint64",
-      },
-      {
-        internalType: "uint32",
-        name: "gasLimit",
-        type: "uint32",
-      },
-    ],
-    name: "executeRequest",
-    outputs: [
-      {
-        internalType: "bytes32",
-        name: "",
-        type: "bytes32",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
         internalType: "address",
         name: "owner",
         type: "address",
       },
       {
-        internalType: "uint256",
-        name: "interviewer",
-        type: "uint256",
+        internalType: "string",
+        name: "topic",
+        type: "string",
       },
     ],
     name: "find",
@@ -454,12 +204,12 @@ export const interviewContractAbi = [
   },
   {
     inputs: [],
-    name: "getDONPublicKey",
+    name: "getCounterCurrent",
     outputs: [
       {
-        internalType: "bytes",
+        internalType: "uint256",
         name: "",
-        type: "bytes",
+        type: "uint256",
       },
     ],
     stateMutability: "view",
@@ -486,55 +236,15 @@ export const interviewContractAbi = [
         type: "uint256",
       },
     ],
-    name: "getParams",
+    name: "getTopic",
     outputs: [
       {
-        components: [
-          {
-            internalType: "uint256",
-            name: "started",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "interviewer",
-            type: "uint256",
-          },
-          {
-            internalType: "uint256",
-            name: "points",
-            type: "uint256",
-          },
-        ],
-        internalType: "struct Interview.Params",
+        internalType: "string",
         name: "",
-        type: "tuple",
+        type: "string",
       },
     ],
     stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "bytes32",
-        name: "requestId",
-        type: "bytes32",
-      },
-      {
-        internalType: "bytes",
-        name: "response",
-        type: "bytes",
-      },
-      {
-        internalType: "bytes",
-        name: "err",
-        type: "bytes",
-      },
-    ],
-    name: "handleOracleFulfillment",
-    outputs: [],
-    stateMutability: "nonpayable",
     type: "function",
   },
   {
@@ -569,9 +279,9 @@ export const interviewContractAbi = [
         type: "address",
       },
       {
-        internalType: "uint256",
-        name: "interviewer",
-        type: "uint256",
+        internalType: "string",
+        name: "topic",
+        type: "string",
       },
     ],
     name: "isStarted",
@@ -691,6 +401,39 @@ export const interviewContractAbi = [
   {
     inputs: [
       {
+        internalType: "uint256",
+        name: "tokenId",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256[]",
+        name: "messageTimestamps",
+        type: "uint256[]",
+      },
+      {
+        internalType: "string[]",
+        name: "messageRoles",
+        type: "string[]",
+      },
+      {
+        internalType: "string[]",
+        name: "messageContents",
+        type: "string[]",
+      },
+      {
+        internalType: "uint256[]",
+        name: "messagePoints",
+        type: "uint256[]",
+      },
+    ],
+    name: "saveMessages",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "address",
         name: "operator",
         type: "address",
@@ -722,9 +465,9 @@ export const interviewContractAbi = [
   {
     inputs: [
       {
-        internalType: "uint256",
-        name: "interviewer",
-        type: "uint256",
+        internalType: "string",
+        name: "topic",
+        type: "string",
       },
     ],
     name: "start",

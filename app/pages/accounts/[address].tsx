@@ -1,6 +1,7 @@
 import AccountInterviews from "@/components/account/AccountInterviews";
 import AccountProfile from "@/components/account/AccountProfile";
 import Layout from "@/components/layout";
+import { ThickDivider } from "@/components/styled";
 import { useRouter } from "next/router";
 
 /**
@@ -15,10 +16,8 @@ export default function Account() {
       {address && (
         <>
           <AccountProfile address={address.toString()} />
-          <AccountInterviews
-            address={address.toString() as `0x${string}`}
-            sx={{ mt: 8 }}
-          />
+          <ThickDivider sx={{ my: 8 }} />
+          <AccountInterviews address={address.toString()} />
         </>
       )}
     </Layout>

@@ -1,4 +1,4 @@
-import { Chain, polygonMumbai } from "wagmi/chains";
+import { Chain, filecoinCalibration } from "wagmi/chains";
 import { stringToAddress } from "./converters";
 
 interface ChainConfig {
@@ -15,14 +15,15 @@ interface ChainConfig {
 export function getSupportedChainConfigs(): ChainConfig[] {
   const chainConfigs: ChainConfig[] = [];
   if (
-    process.env.NEXT_PUBLIC_MUMBAI_PROFILE_CONTRACT_ADDRESS &&
-    process.env.NEXT_PUBLIC_MUMBAI_INTERVIEW_CONTRACT_ADDRESS
+    process.env.NEXT_PUBLIC_CALIBRATION_PROFILE_CONTRACT_ADDRESS &&
+    process.env.NEXT_PUBLIC_CALIBRATION_INTERVIEW_CONTRACT_ADDRESS
   ) {
     chainConfigs.push({
-      chain: polygonMumbai,
+      chain: filecoinCalibration,
       contractAddresses: {
-        profile: process.env.NEXT_PUBLIC_MUMBAI_PROFILE_CONTRACT_ADDRESS,
-        interview: process.env.NEXT_PUBLIC_MUMBAI_INTERVIEW_CONTRACT_ADDRESS,
+        profile: process.env.NEXT_PUBLIC_CALIBRATION_PROFILE_CONTRACT_ADDRESS,
+        interview:
+          process.env.NEXT_PUBLIC_CALIBRATION_INTERVIEW_CONTRACT_ADDRESS,
       },
     });
   }

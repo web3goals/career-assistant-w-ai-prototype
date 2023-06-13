@@ -4,6 +4,8 @@ import FormikHelper from "@/components/helper/FormikHelper";
 import Layout from "@/components/layout";
 import {
   CardBox,
+  DialogCenterContent,
+  ExtraLargeLoadingButton,
   FullWidthSkeleton,
   LargeLoadingButton,
   ThickDivider,
@@ -11,14 +13,16 @@ import {
   WidgetInputTextField,
   WidgetTitle,
 } from "@/components/styled";
-import { INTERVIEWERS } from "@/constants/interviewers";
+import { INTERVIEW_TOPICS } from "@/constants/interviewTopics";
+import { DialogContext } from "@/context/dialog";
 import { interviewContractAbi } from "@/contracts/abi/interviewContract";
 import { profileContractAbi } from "@/contracts/abi/profileContract";
 import useError from "@/hooks/useError";
+import useInterviewPointsLoader from "@/hooks/useInterviewPointsLoader";
 import useToasts from "@/hooks/useToast";
 import useUriDataLoader from "@/hooks/useUriDataLoader";
 import { palette } from "@/theme/palette";
-import { Interviewer, InterviewMessage, ProfileUriData } from "@/types";
+import { InterviewMessage, InterviewTopic, ProfileUriData } from "@/types";
 import { isAddressesEqual } from "@/utils/addresses";
 import {
   chainToSupportedChainId,
@@ -26,12 +30,13 @@ import {
   chainToSupportedChainProfileContractAddress,
 } from "@/utils/chains";
 import { stringToAddress, timestampToDate } from "@/utils/converters";
-import { Avatar, Box, Stack, SxProps, Typography } from "@mui/material";
+import { Avatar, Box, Dialog, Stack, Typography } from "@mui/material";
 import axios from "axios";
 import { ethers } from "ethers";
 import { Form, Formik } from "formik";
+import { chain } from "lodash";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   useAccount,
   useContractRead,
@@ -62,15 +67,21 @@ export default function Interview() {
   });
 
   /**
-   * Define params
+   * Define topic
    */
-  const { data: params } = useContractRead({
+  const { data: topicId } = useContractRead({
     address: chainToSupportedChainInterviewContractAddress(chain),
     abi: interviewContractAbi,
-    functionName: "getParams",
+    functionName: "getTopic",
     args: [BigInt(id?.toString() || 0)],
     enabled: id !== undefined,
   });
+  const topic = INTERVIEW_TOPICS.find((element) => element.id === topicId);
+
+  /**
+   * Define points
+   */
+  const { points } = useInterviewPointsLoader(id?.toString());
 
   /**
    * Define owner profile uri data
@@ -85,25 +96,21 @@ export default function Interview() {
     useUriDataLoader<ProfileUriData>(ownerProfileUri);
 
   return (
-    <Layout maxWidth="sm">
-      {id && owner && params ? (
+    <Layout maxWidth="md">
+      {id && owner && topic && points ? (
         <>
-          <InteviewInterviewer
-            interviewer={INTERVIEWERS[Number(params?.interviewer)]}
-          />
-          <InterviewPoints
-            sx={{ mt: 6 }}
-            id={id.toString()}
+          <InteviewTopic
+            topic={topic}
             owner={owner}
             ownerProfileUriData={ownerProfileUriData}
-            points={Number(params.points)}
+            points={points}
           />
           <ThickDivider sx={{ my: 8 }} />
           <InterviewMessages
             id={id.toString()}
+            topic={topic}
             owner={owner}
             ownerProfileUriData={ownerProfileUriData}
-            interviewer={INTERVIEWERS[Number(params?.interviewer)]}
           />
         </>
       ) : (
@@ -113,55 +120,26 @@ export default function Interview() {
   );
 }
 
-function InteviewInterviewer(props: { interviewer: Interviewer }) {
-  return (
-    <Box display="flex" flexDirection="column" alignItems="center">
-      <Avatar
-        sx={{ width: 196, height: 196 }}
-        src={props.interviewer.imageAlt}
-      />
-      <Typography variant="h4" fontWeight={700} textAlign="center" mt={3}>
-        {props.interviewer.title}
-      </Typography>
-      <Typography textAlign="center" mt={1}>
-        {props.interviewer.subtitle}
-      </Typography>
-    </Box>
-  );
-}
-
-function InterviewPoints(props: {
-  id: string;
+function InteviewTopic(props: {
+  topic: InterviewTopic;
   owner: string;
   ownerProfileUriData?: ProfileUriData;
   points: number;
-  sx?: SxProps;
 }) {
-  const { address } = useAccount();
-
   return (
-    <CardBox
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        borderColor: "#000000",
-        borderWidth: 7,
-        padding: "32px 32px",
-        ...props.sx,
-      }}
-    >
-      <Typography variant="h4" fontWeight={700} textAlign="center">
-        🚀 Earned {props.points} XP
+    <Box display="flex" flexDirection="column" alignItems="center">
+      <Avatar sx={{ width: 196, height: 196 }} src={props.topic.imageAlt} />
+      <Typography variant="h4" fontWeight={700} textAlign="center" mt={3}>
+        {props.topic.title}
       </Typography>
       <Stack
-        direction="row"
+        direction={{ xs: "column", md: "row" }}
         justifyContent="center"
         alignItems="center"
         spacing={1}
         mt={1}
       >
-        <Typography>by</Typography>
+        <Typography>Where</Typography>
         <AccountAvatar
           size={24}
           emojiSize={12}
@@ -173,82 +151,21 @@ function InterviewPoints(props: {
           accountProfileUriData={props.ownerProfileUriData}
           variant="body1"
         />
+        <Typography>
+          earned <strong>{props.points} XP</strong>
+        </Typography>
       </Stack>
-      {isAddressesEqual(address, props.owner) && (
-        <InterviewPointsRefreshButton id={props.id} sx={{ mt: 2 }} />
-      )}
-    </CardBox>
-  );
-}
-
-function InterviewPointsRefreshButton(props: { id: string; sx: SxProps }) {
-  const { chain } = useNetwork();
-  const { showToastSuccess, showToastError } = useToasts();
-
-  const requestSource =
-    '// Define args\r\nconst interviewId = args[0]\r\nconsole.log(`Interview ID: ${interviewId}`)\r\n\r\n// Make request\r\nconst request = Functions.makeHttpRequest({\r\n  url: `https://ai-interviewer-app.vercel.app/api/interviews/getTotalPoints?interviewId=${interviewId}`,\r\n})\r\nconst [response] = await Promise.all([request])\r\nif (response.error) {\r\n  throw Error("Request is failed")\r\n}\r\n\r\n// Define total points\r\nconst totalPoints = response.data.data\r\nconsole.log(`Total points: ${totalPoints}`)\r\n\r\n// Return result\r\nreturn Functions.encodeUint256(totalPoints)\r\n';
-
-  const { config: contractPrepareConfig, isError: isContractPrepareError } =
-    usePrepareContractWrite({
-      address: chainToSupportedChainInterviewContractAddress(chain),
-      abi: interviewContractAbi,
-      functionName: "executeRequest",
-      args: [
-        BigInt(props.id),
-        requestSource,
-        "0x",
-        [props.id],
-        BigInt(process.env.NEXT_PUBLIC_CHAINLINK_FUNCTIONS_SUBSCRIPTION || ""),
-        100000,
-      ],
-      chainId: chainToSupportedChainId(chain),
-      onError(error: any) {
-        showToastError(error);
-      },
-    });
-  const {
-    data: contractWriteData,
-    isLoading: isContractWriteLoading,
-    write: contractWrite,
-  } = useContractWrite(contractPrepareConfig);
-  const { isLoading: isTransactionLoading, isSuccess: isTransactionSuccess } =
-    useWaitForTransaction({
-      hash: contractWriteData?.hash,
-    });
-
-  useEffect(() => {
-    if (isTransactionSuccess) {
-      showToastSuccess("Points will be refreshed soon");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTransactionSuccess]);
-
-  const isLoading = isContractWriteLoading || isTransactionLoading;
-  const isDisabled =
-    isLoading ||
-    isTransactionSuccess ||
-    isContractPrepareError ||
-    !contractWrite;
-
-  return (
-    <LargeLoadingButton
-      variant="contained"
-      disabled={isDisabled}
-      loading={isLoading}
-      onClick={() => contractWrite?.()}
-      sx={{ ...props.sx }}
-    >
-      Refresh
-    </LargeLoadingButton>
+    </Box>
   );
 }
 
 function InterviewMessages(props: {
   id: string;
+  topic: InterviewTopic;
   owner: string;
   ownerProfileUriData?: ProfileUriData;
-  interviewer: Interviewer;
 }) {
+  const { showDialog, closeDialog } = useContext(DialogContext);
   const { address } = useAccount();
   const { handleError } = useError();
   const [messages, setMessages] = useState<InterviewMessage[] | undefined>();
@@ -265,23 +182,24 @@ function InterviewMessages(props: {
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
 
   /**
-   * Get response from chatgpt and upload messages to space and time
+   * Get response from chatgpt
    */
   async function submitForm(values: any, actions: any) {
     try {
       setIsFormSubmitting(true);
       if (!messages) {
-        throw new Error("System messages are not defined");
+        throw new Error("Messages are not defined");
       }
       // Define user message
+      const userMessageTimestamp = Math.floor(new Date().getTime() / 1000);
       const userMessage: InterviewMessage = {
-        id: `${props.id}_${messages.length}`,
-        interviewId: props.id.toString(),
-        messageId: messages.length,
-        date: Math.round(new Date().getTime() / 1000),
+        id: `${props.id}_${userMessageTimestamp}`,
+        interview: props.id.toString(),
+        timestamp: userMessageTimestamp,
         role: "user",
         content: values.message,
         points: 0,
+        isSaved: false,
       };
       // Prepare messages for chatgpt
       const chatgptMessages = [...messages, userMessage].map((message) => ({
@@ -305,23 +223,20 @@ function InterviewMessages(props: {
         }
       );
       // Define chatgpt message
+      const chatgptMessageTimestamp = Math.floor(new Date().getTime() / 1000);
       const chatgptMessageContent: string =
         chatgptResponse.data.choices?.[0]?.message?.content;
       const chatgptMessage: InterviewMessage = {
-        id: `${props.id}_${messages.length + 1}`,
-        interviewId: props.id.toString(),
-        messageId: messages.length + 1,
-        date: Math.round(new Date().getTime() / 1000),
+        id: `${props.id}_${chatgptMessageTimestamp}`,
+        interview: props.id.toString(),
+        timestamp: chatgptMessageTimestamp,
         role: "assistant",
         content: chatgptMessageContent,
         points: chatgptMessageContent.toLowerCase().includes("plus one point")
           ? 1
           : 0,
+        isSaved: false,
       };
-      // Send messages to space and time
-      await axios.post("/api/interviews/postMessages", {
-        messages: [userMessage, chatgptMessage],
-      });
       // Update messages
       setMessages([...messages, userMessage, chatgptMessage]);
       actions?.resetForm();
@@ -336,44 +251,49 @@ function InterviewMessages(props: {
    * Load messages
    */
   useEffect(() => {
-    // Init messages with system message
-    const messages: InterviewMessage[] = [
-      {
-        id: `${props.id}_0`,
-        interviewId: props.id.toString(),
-        messageId: 0,
-        date: 0,
-        role: "system",
-        content: props.interviewer.prompt,
-        points: 0,
-      },
-    ];
-    // Load messages from space and time using api
+    // Define system message
+    const systemMessage: InterviewMessage = {
+      id: `${props.id}_0`,
+      interview: props.id.toString(),
+      timestamp: 0,
+      role: "system",
+      content: props.topic.prompt,
+      points: 0,
+      isSaved: true,
+    };
+    // Load messages from tableland
     axios
-      .get(`/api/interviews/getMessages?interviewId=${props.id}`)
+      .get(
+        `https://testnets.tableland.network/api/v1/query?statement=select%20%2A%20from%20${process.env.NEXT_PUBLIC_TABLELAND_TABLE}%20where%20interview%20%3D%20${props.id}`
+      )
       .then((response) => {
-        for (const responseMessage of response.data.data) {
-          messages.push({
-            id: responseMessage.ID,
-            interviewId: responseMessage.INTERVIEW_ID,
-            messageId: responseMessage.MESSAGE_ID,
-            date: responseMessage.DATE,
-            role: responseMessage.ROLE,
-            content: atob(responseMessage.CONTENT),
-            points: responseMessage.POINTS,
+        const loadedMessages: InterviewMessage[] = [];
+        for (const message of response.data) {
+          loadedMessages.push({
+            id: message.id,
+            interview: String(message.interview),
+            timestamp: message.timestamp,
+            role: message.role,
+            content: atob(message.content),
+            points: message.points,
+            isSaved: true,
           });
         }
-        setMessages(messages);
+        setMessages([systemMessage, ...loadedMessages]);
       })
-      .catch((error) => handleError(error, true));
+      .catch((error) => {
+        // If tableland row not found then save only system message
+        if (error?.response?.data?.message === "Row not found") {
+          setMessages([systemMessage]);
+        } else {
+          handleError(error, true);
+        }
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.id]);
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
-      <Typography variant="h4" fontWeight={700} textAlign="center">
-        🎤️ Interview
-      </Typography>
       {messages && isAddressesEqual(address, props.owner) && (
         <Formik
           initialValues={formValues}
@@ -396,7 +316,7 @@ function InterviewMessages(props: {
                 <WidgetInputTextField
                   id="message"
                   name="message"
-                  placeholder="I’m ready!"
+                  placeholder="Hey!"
                   value={values.message}
                   onChange={handleChange}
                   error={touched.message && Boolean(errors.message)}
@@ -407,16 +327,39 @@ function InterviewMessages(props: {
                   sx={{ width: 1 }}
                 />
               </WidgetBox>
-              {/* Submit button */}
-              <LargeLoadingButton
-                loading={isFormSubmitting}
-                variant="outlined"
-                type="submit"
-                disabled={isFormSubmitting}
-                sx={{ mt: 2 }}
-              >
-                Post
-              </LargeLoadingButton>
+              <Stack direction={{ xs: "column", md: "row" }} spacing={2} mt={2}>
+                {/* Submit button */}
+                <LargeLoadingButton
+                  loading={isFormSubmitting}
+                  variant="contained"
+                  type="submit"
+                  disabled={isFormSubmitting}
+                >
+                  Post message
+                </LargeLoadingButton>
+                {/* Save messages button */}
+                <LargeLoadingButton
+                  disabled={!messages.find((message) => !message.isSaved)}
+                  variant="outlined"
+                  onClick={() =>
+                    showDialog?.(
+                      <InterviewSaveMessagesDialog
+                        id={props.id}
+                        messages={messages}
+                        onSaving={() => setIsFormSubmitting(true)}
+                        onSaved={(messages) => {
+                          setMessages(messages);
+                          setIsFormSubmitting(false);
+                          closeDialog?.();
+                        }}
+                        onClose={closeDialog}
+                      />
+                    )
+                  }
+                >
+                  Save messages
+                </LargeLoadingButton>
+              </Stack>
             </Form>
           )}
         </Formik>
@@ -433,15 +376,19 @@ function InterviewMessages(props: {
               return (
                 <CardBox
                   key={index}
-                  sx={{ display: "flex", flexDirection: "row", mt: 2 }}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    borderColor: message.isSaved
+                      ? palette.divider
+                      : palette.blue,
+                    mt: 2,
+                  }}
                 >
                   {/* Left part */}
                   <Box>
                     {message.role === "assistant" ? (
-                      <Avatar
-                        sx={{ width: 64, height: 64 }}
-                        src={props.interviewer.imageAlt}
-                      />
+                      <Avatar sx={{ width: 64, height: 64 }}>💪</Avatar>
                     ) : (
                       <AccountAvatar
                         account={props.owner}
@@ -455,7 +402,7 @@ function InterviewMessages(props: {
                   <Box ml={1.5}>
                     {message.role === "assistant" ? (
                       <Typography fontWeight={700} variant="body2">
-                        {props.interviewer.name}
+                        Bro
                       </Typography>
                     ) : (
                       <AccountLink
@@ -464,7 +411,7 @@ function InterviewMessages(props: {
                       />
                     )}
                     <Typography variant="body2" color="text.secondary">
-                      {timestampToDate(message.date)?.toLocaleString()}
+                      {timestampToDate(message.timestamp)?.toLocaleString()}
                     </Typography>
                     <Typography mt={1}>{message.content}</Typography>
                   </Box>
@@ -475,5 +422,123 @@ function InterviewMessages(props: {
       )}
       {!messages && <FullWidthSkeleton />}
     </Box>
+  );
+}
+
+function InterviewSaveMessagesDialog(props: {
+  id: string;
+  messages: InterviewMessage[];
+  onSaving: () => void;
+  onSaved: (messages: InterviewMessage[]) => void;
+  isClose?: boolean;
+  onClose?: Function;
+}) {
+  const { chain } = useNetwork();
+  const { showToastSuccess, showToastError } = useToasts();
+
+  /**
+   * Dialog states
+   */
+  const [isOpen, setIsOpen] = useState(!props.isClose);
+
+  /**
+   * Define params of not saved messages
+   */
+  const notSavedMessages = props.messages.filter((message) => !message.isSaved);
+  const notSavedMessageTimestamps = notSavedMessages.map((message) =>
+    BigInt(message.timestamp)
+  );
+  const notSavedMessageRoles = notSavedMessages.map((message) => message.role);
+  const notSavedMessageContents = notSavedMessages.map((message) =>
+    btoa(message.content)
+  );
+  const notSavedMessagePoints = notSavedMessages.map((message) =>
+    BigInt(message.points)
+  );
+
+  /**
+   * Contract states
+   */
+  const { config: contractPrepareConfig, isError: isContractPrepareError } =
+    usePrepareContractWrite({
+      address: chainToSupportedChainInterviewContractAddress(chain),
+      abi: interviewContractAbi,
+      functionName: "saveMessages",
+      args: [
+        BigInt(props.id),
+        notSavedMessageTimestamps,
+        notSavedMessageRoles,
+        notSavedMessageContents,
+        notSavedMessagePoints,
+      ],
+      chainId: chainToSupportedChainId(chain),
+      onError(error: any) {
+        showToastError(error);
+      },
+    });
+  const {
+    data: contractWriteData,
+    isLoading: isContractWriteLoading,
+    write: contractWrite,
+  } = useContractWrite(contractPrepareConfig);
+  const { isLoading: isTransactionLoading, isSuccess: isTransactionSuccess } =
+    useWaitForTransaction({
+      hash: contractWriteData?.hash,
+    });
+
+  const isLoading = isContractWriteLoading || isTransactionLoading;
+  const isDisabled =
+    isLoading ||
+    isTransactionSuccess ||
+    isContractPrepareError ||
+    !contractWrite;
+
+  /**
+   * Function to close dialog
+   */
+  async function close() {
+    setIsOpen(false);
+    props.onClose?.();
+  }
+
+  useEffect(() => {
+    if (isLoading) {
+      props.onSaving();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (isTransactionSuccess) {
+      showToastSuccess("Messages are saved");
+      const messages = props.messages.map((message) =>
+        !message.isSaved ? { ...message, isSaved: true } : message
+      );
+      props.onSaved(messages);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTransactionSuccess]);
+
+  return (
+    <Dialog open={isOpen} onClose={close} maxWidth="sm" fullWidth>
+      <DialogCenterContent>
+        <Typography variant="h4" fontWeight={700} textAlign="center">
+          🏁 Save messages
+        </Typography>
+        <Typography textAlign="center" mt={1}>
+          and update the number of earned experience points
+        </Typography>
+        <ExtraLargeLoadingButton
+          variant="outlined"
+          type="submit"
+          disabled={isDisabled}
+          loading={isLoading}
+          onClick={() => contractWrite?.()}
+          sx={{ mt: 4 }}
+        >
+          Submit
+        </ExtraLargeLoadingButton>
+      </DialogCenterContent>
+    </Dialog>
   );
 }

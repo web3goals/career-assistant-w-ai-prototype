@@ -1,133 +1,190 @@
-import { INTERVIEWERS } from "@/constants/interviewers";
+import { INTERVIEW_TOPICS } from "@/constants/interviewTopics";
 import { interviewContractAbi } from "@/contracts/abi/interviewContract";
+import useInterviewPointsLoader from "@/hooks/useInterviewPointsLoader";
+import useToasts from "@/hooks/useToast";
 import { theme } from "@/theme";
 import { palette } from "@/theme/palette";
-import { Interviewer } from "@/types";
-import { chainToSupportedChainInterviewContractAddress } from "@/utils/chains";
-import { Box, Stack, SxProps, Typography } from "@mui/material";
+import { InterviewTopic } from "@/types";
+import { isAddressesEqual } from "@/utils/addresses";
+import {
+  chainToSupportedChainId,
+  chainToSupportedChainInterviewContractAddress,
+} from "@/utils/chains";
+import { stringToAddress } from "@/utils/converters";
+import { Avatar, Box, Stack, SxProps, Typography } from "@mui/material";
+import { ethers } from "ethers";
 import Link from "next/link";
-import { useContractRead, useNetwork } from "wagmi";
-import { CardBox, LargeLoadingButton } from "../styled";
+import { useEffect } from "react";
+import {
+  useAccount,
+  useContractRead,
+  useContractWrite,
+  useNetwork,
+  usePrepareContractWrite,
+  useWaitForTransaction,
+} from "wagmi";
+import { CardBox, FullWidthSkeleton, LargeLoadingButton } from "../styled";
 
 /**
  * A component with account interviews.
  */
 export default function AccountInterviews(props: {
-  address: `0x${string}`;
+  address: string;
   sx?: SxProps;
 }) {
   return (
     <Stack width={1} spacing={3} sx={{ ...props.sx }}>
       <AccountInterview
         address={props.address}
-        interviewer={INTERVIEWERS[0]}
+        topic={INTERVIEW_TOPICS[0]}
         backgroundColor={palette.yellow}
       />
       <AccountInterview
         address={props.address}
-        interviewer={INTERVIEWERS[1]}
+        topic={INTERVIEW_TOPICS[1]}
         backgroundColor={palette.purpleLight}
         textColor={theme.palette.primary.contrastText}
       />
+      <AccountSoonInterviews />
     </Stack>
   );
 }
 
 function AccountInterview(props: {
-  address: `0x${string}`;
-  interviewer: Interviewer;
+  address: string;
+  topic: InterviewTopic;
   backgroundColor?: string;
   textColor?: string;
 }) {
   const { chain } = useNetwork();
+  const { address } = useAccount();
 
-  const { data: isStarted } = useContractRead({
-    address: chainToSupportedChainInterviewContractAddress(chain),
-    abi: interviewContractAbi,
-    functionName: "isStarted",
-    args: [props.address, BigInt(props.interviewer.id)],
-  });
-
-  if (isStarted) {
-    return (
-      <AccountInterviewStarted
-        address={props.address}
-        interviewer={props.interviewer}
-        backgroundColor={props.backgroundColor}
-        textColor={props.textColor}
-      />
-    );
-  }
-
-  return <></>;
-}
-
-function AccountInterviewStarted(props: {
-  address: `0x${string}`;
-  interviewer: Interviewer;
-  backgroundColor?: string;
-  textColor?: string;
-}) {
-  const { chain } = useNetwork();
-
-  const { data: id } = useContractRead({
+  const { data: id, isSuccess } = useContractRead({
     address: chainToSupportedChainInterviewContractAddress(chain),
     abi: interviewContractAbi,
     functionName: "find",
-    args: [props.address, BigInt(props.interviewer.id)],
+    args: [
+      stringToAddress(props.address) || ethers.constants.AddressZero,
+      props.topic.id,
+    ],
   });
 
-  const { data: params } = useContractRead({
-    address: chainToSupportedChainInterviewContractAddress(chain),
-    abi: interviewContractAbi,
-    functionName: "getParams",
-    args: [id || BigInt(0)],
-    enabled: id !== undefined,
-  });
+  const { points } = useInterviewPointsLoader(id?.toString());
 
-  if (id && params) {
-    return (
-      <CardBox
-        sx={{
-          backgroundColor: props.backgroundColor,
-          borderColor: "#000000",
-          borderWidth: 7,
-          padding: "24px 32px",
-          color: props.textColor,
-        }}
-      >
-        <Typography variant="h4" fontWeight={700}>
-          {props.interviewer.titleAlt}
-        </Typography>
-        <Typography mt={1}>
-          🚀 Earned{" "}
-          <strong>{params.points.toString()} experience points</strong>
-        </Typography>
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2}
-          mt={2}
-          alignItems={{ md: "center" }}
-        >
-          <Link href={`/interviews/${id}`}>
-            <LargeLoadingButton variant="contained">
-              Open Interview
-            </LargeLoadingButton>
-          </Link>
-          <Link
-            href={`https://testnets.opensea.io/assets/mumbai/${chainToSupportedChainInterviewContractAddress(
-              chain
-            )}/${id}`}
-            target="_blank"
-          >
-            <LargeLoadingButton variant="outlined">
-              View on OpenSea
-            </LargeLoadingButton>
-          </Link>
-        </Stack>
-      </CardBox>
-    );
+  if (id === undefined || points === undefined) {
+    return <FullWidthSkeleton />;
   }
 
-  return <></>;
+  return (
+    <CardBox
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        backgroundColor: props.backgroundColor,
+        borderColor: props.backgroundColor,
+        borderWidth: 7,
+        padding: "24px 32px",
+        color: props.textColor,
+      }}
+    >
+      {/* Left part */}
+      <Box>
+        <Avatar sx={{ width: 128, height: 128 }} src={props.topic.image} />
+      </Box>
+      {/* Right part */}
+      <Box mt={{ xs: 2, md: 0 }} ml={{ md: 4 }}>
+        <Typography variant="h4" fontWeight={700}>
+          {props.topic.title}
+        </Typography>
+        <Typography mt={1}>
+          Earned <strong>{points} experience points</strong>
+        </Typography>
+        {/* Open button */}
+        {id !== BigInt(0) && (
+          <Link href={`/interviews/${id}`}>
+            <LargeLoadingButton variant="contained" sx={{ mt: 3 }}>
+              Open
+            </LargeLoadingButton>
+          </Link>
+        )}
+        {/* Start button */}
+        {id === BigInt(0) && isAddressesEqual(address, props.address) && (
+          <AccountInterviewStartButton topic={props.topic} sx={{ mt: 3 }} />
+        )}
+      </Box>
+    </CardBox>
+  );
+}
+
+function AccountInterviewStartButton(props: {
+  topic: InterviewTopic;
+  sx: SxProps;
+}) {
+  const { chain } = useNetwork();
+  const { showToastSuccess, showToastError } = useToasts();
+
+  const { config: contractPrepareConfig, isError: isContractPrepareError } =
+    usePrepareContractWrite({
+      address: chainToSupportedChainInterviewContractAddress(chain),
+      abi: interviewContractAbi,
+      functionName: "start",
+      args: [props.topic.id],
+      chainId: chainToSupportedChainId(chain),
+      onError(error: any) {
+        showToastError(error);
+      },
+    });
+  const {
+    data: contractWriteData,
+    isLoading: isContractWriteLoading,
+    write: contractWrite,
+  } = useContractWrite(contractPrepareConfig);
+  const { isLoading: isTransactionLoading, isSuccess: isTransactionSuccess } =
+    useWaitForTransaction({
+      hash: contractWriteData?.hash,
+    });
+
+  useEffect(() => {
+    if (isTransactionSuccess) {
+      showToastSuccess("Interview is started, refresh the page to open it");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTransactionSuccess]);
+
+  const isLoading = isContractWriteLoading || isTransactionLoading;
+  const isDisabled =
+    isLoading ||
+    isTransactionSuccess ||
+    isContractPrepareError ||
+    !contractWrite;
+
+  return (
+    <LargeLoadingButton
+      variant="contained"
+      disabled={isDisabled}
+      loading={isLoading}
+      onClick={() => contractWrite?.()}
+      sx={{ ...props.sx }}
+    >
+      Start
+    </LargeLoadingButton>
+  );
+}
+
+function AccountSoonInterviews() {
+  return (
+    <CardBox
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        borderWidth: 7,
+        padding: "38px 32px",
+      }}
+    >
+      <Typography variant="h4" fontWeight={700}>
+        ⌛ New interviews coming soon
+      </Typography>
+    </CardBox>
+  );
 }
