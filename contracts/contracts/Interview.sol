@@ -31,6 +31,7 @@ contract Interview is ERC721, Ownable {
                 "id text primary key,"
                 "interview integer,"
                 "timestamp integer,"
+                "role text,"
                 "content text,"
                 "points integer",
                 _TABLE_PREFIX
@@ -67,6 +68,7 @@ contract Interview is ERC721, Ownable {
     function saveMessages(
         uint tokenId,
         uint[] memory messageTimestamps,
+        string[] memory messageRoles,
         string[] memory messageContents,
         uint[] memory messagePoints
     ) public {
@@ -82,7 +84,7 @@ contract Interview is ERC721, Ownable {
                 SQLHelpers.toInsert(
                     _TABLE_PREFIX,
                     _tableId,
-                    "id,interview,timestamp,content,points",
+                    "id,interview,timestamp,role,content,points",
                     string.concat(
                         SQLHelpers.quote(
                             string.concat(
@@ -95,6 +97,8 @@ contract Interview is ERC721, Ownable {
                         Strings.toString(tokenId),
                         ",",
                         Strings.toString(messageTimestamps[i]),
+                        ",",
+                        SQLHelpers.quote(messageRoles[i]),
                         ",",
                         SQLHelpers.quote(messageContents[i]),
                         ",",
@@ -125,12 +129,21 @@ contract Interview is ERC721, Ownable {
         address owner,
         string memory topic
     ) public view returns (bool) {
+        uint tokenId = find(owner, topic);
+        return tokenId != 0;
+    }
+
+    function find(
+        address owner,
+        string memory topic
+    ) public view returns (uint) {
+        uint tokenId;
         for (uint i = 1; i <= _counter.current(); i++) {
             if (ownerOf(i) == owner && Strings.equal(_topics[i], topic)) {
-                return true;
+                tokenId = i;
             }
         }
-        return false;
+        return tokenId;
     }
 
     function tokenURI(

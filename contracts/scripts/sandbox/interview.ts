@@ -17,7 +17,7 @@ async function main() {
   // const tableId = await interviewContract._tableId();
   // console.log("👀 tableId", tableId);
 
-  // const startTx = await interviewContract.start("solidity");
+  // const startTx = await interviewContract.start("sandbox");
   // console.log("👀 startTx", startTx);
   // await startTx.wait();
 
@@ -27,6 +27,7 @@ async function main() {
   // const saveMessagesTx = await interviewContract.saveMessages(
   //   1,
   //   [1686586355],
+  //   ["user"],
   //   ["Hello world!"],
   //   [1]
   // );
