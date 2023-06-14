@@ -35,9 +35,9 @@ export const ExtraLargeLoadingButton = styled(
   borderRadius: "78px",
   padding: "24px 78px",
   ...(variant === "outlined" && {
-    border: "5px solid",
+    boxShadow: "inset 0px 0px 0px 5px",
     "&:hover": {
-      border: "5px solid",
+      boxShadow: "inset 0px 0px 0px 5px",
     },
   }),
 })) as typeof LoadingButton;
@@ -49,9 +49,9 @@ export const LargeLoadingButton = styled(LoadingButton)<LoadingButtonProps>(
     borderRadius: "78px",
     padding: "14px 48px",
     ...(variant === "outlined" && {
-      border: "5px solid",
+      boxShadow: "inset 0px 0px 0px 5px",
       "&:hover": {
-        border: "5px solid",
+        boxShadow: "inset 0px 0px 0px 5px",
       },
     }),
   })
@@ -64,9 +64,9 @@ export const MediumLoadingButton = styled(LoadingButton)<LoadingButtonProps>(
     borderRadius: "24px",
     padding: "8px 18px",
     ...(variant === "outlined" && {
-      border: "4px solid",
+      boxShadow: "inset 0px 0px 0px 4px",
       "&:hover": {
-        border: "4px solid",
+        boxShadow: "inset 0px 0px 0px 4px",
       },
     }),
   })
