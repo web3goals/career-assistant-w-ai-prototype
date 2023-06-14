@@ -120,7 +120,7 @@ function ChatInterlocutor(props: {
       display="flex"
       flexDirection="column"
       alignItems="center"
-      sx={{ background: "#000000", pt: 6, pb: 4 }}
+      sx={{ background: "#000000", pt: 6, pb: 4, px: 2 }}
     >
       <Stack
         direction={{ xs: "column", md: "row" }}
