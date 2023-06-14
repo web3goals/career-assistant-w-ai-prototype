@@ -23,7 +23,14 @@ import { chainToSupportedChainProfileContractAddress } from "@/utils/chains";
 import { stringToAddress } from "@/utils/converters";
 import { Audio, Video } from "@huddle01/react/components";
 import { useLobby, usePeers, useRoom, useVideo } from "@huddle01/react/hooks";
-import { Box, Dialog, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Container,
+  Dialog,
+  Stack,
+  SxProps,
+  Typography,
+} from "@mui/material";
 import * as PushAPI from "@pushprotocol/restapi";
 import { ENV } from "@pushprotocol/restapi/src/lib/constants";
 import axios from "axios";
@@ -73,20 +80,27 @@ export default function Chat() {
   );
 
   return (
-    <Layout maxWidth="md">
+    <Layout maxWidth={false} disableGutters hideToolbar>
       {address && interlocutor ? (
         <>
-          <ChatStream
+          <ChatInterlocutor
             interlocutor={interlocutor.toString()}
             interlocutorProfileUriData={interlocutorProfileUriData}
           />
-          <ThickDivider sx={{ my: 8 }} />
-          <ChatMessages
-            connectedAccount={address}
-            connectedAccountProfileUriData={connectedAccountProfileUriData}
-            interlocutor={interlocutor.toString()}
-            interlocutorProfileUriData={interlocutorProfileUriData}
-          />
+          <Container maxWidth="sm">
+            <ChatStream
+              interlocutor={interlocutor.toString()}
+              interlocutorProfileUriData={interlocutorProfileUriData}
+              sx={{ mt: 6 }}
+            />
+            <ThickDivider sx={{ my: 6 }} />
+            <ChatMessages
+              connectedAccount={address}
+              connectedAccountProfileUriData={connectedAccountProfileUriData}
+              interlocutor={interlocutor.toString()}
+              interlocutorProfileUriData={interlocutorProfileUriData}
+            />
+          </Container>
         </>
       ) : (
         <>
@@ -97,9 +111,45 @@ export default function Chat() {
   );
 }
 
+function ChatInterlocutor(props: {
+  interlocutor: string;
+  interlocutorProfileUriData?: ProfileUriData;
+}) {
+  return (
+    <Box
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      sx={{ background: "#000000", pt: 6, pb: 4 }}
+    >
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        justifyContent="center"
+        alignItems="center"
+        spacing={2}
+      >
+        <AccountAvatar
+          size={64}
+          emojiSize={32}
+          account={props.interlocutor}
+          accountProfileUriData={props.interlocutorProfileUriData}
+        />
+        <AccountLink
+          account={props.interlocutor}
+          accountProfileUriData={props.interlocutorProfileUriData}
+          color="#FFFFFF"
+          variant="h4"
+          textAlign="center"
+        />
+      </Stack>
+    </Box>
+  );
+}
+
 function ChatStream(props: {
   interlocutor: string;
   interlocutorProfileUriData?: ProfileUriData;
+  sx?: SxProps;
 }) {
   const [roomId, setRoomId] = useState<string | undefined>();
   const { joinLobby, isLobbyJoined } = useLobby();
@@ -115,28 +165,15 @@ function ChatStream(props: {
   }, [roomId, joinLobby]);
 
   return (
-    <Box display="flex" flexDirection="column" alignItems="center">
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        justifyContent="center"
-        alignItems="center"
-        spacing={2}
-      >
-        <Typography variant="h4" fontWeight={700}>
-          👀 Meeting w/
-        </Typography>
-        <AccountAvatar
-          size={42}
-          emojiSize={20}
-          account={props.interlocutor}
-          accountProfileUriData={props.interlocutorProfileUriData}
-        />
-        <AccountLink
-          account={props.interlocutor}
-          accountProfileUriData={props.interlocutorProfileUriData}
-          variant="h4"
-        />
-      </Stack>
+    <Box
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      sx={{ ...props.sx }}
+    >
+      <Typography variant="h4" fontWeight={700}>
+        👀 Meeting
+      </Typography>
       {roomId && (
         <Typography textAlign="center" mt={1}>
           ID is <strong>{roomId}</strong>
@@ -187,15 +224,7 @@ function ChatStreamRoomDeterminer(props: {
   }
 
   return (
-    <Stack spacing={2}>
-      <LargeLoadingButton
-        variant="contained"
-        loading={isRoomCreating}
-        disabled={isRoomCreating}
-        onClick={() => createRoom()}
-      >
-        Start
-      </LargeLoadingButton>
+    <Stack direction="row" spacing={2}>
       <LargeLoadingButton
         variant="outlined"
         disabled={isRoomCreating}
@@ -209,6 +238,14 @@ function ChatStreamRoomDeterminer(props: {
         }
       >
         Join
+      </LargeLoadingButton>
+      <LargeLoadingButton
+        variant="contained"
+        loading={isRoomCreating}
+        disabled={isRoomCreating}
+        onClick={() => createRoom()}
+      >
+        Start
       </LargeLoadingButton>
     </Stack>
   );
@@ -316,7 +353,7 @@ function ChatStreamLobby() {
   return (
     <>
       {/* Buttons */}
-      <Stack spacing={2}>
+      <Stack direction="row" spacing={2}>
         <LargeLoadingButton
           variant="outlined"
           disabled={!fetchVideoStream.isCallable && !stopVideoStream.isCallable}
@@ -555,27 +592,9 @@ function ChatMessages(props: {
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        justifyContent="center"
-        alignItems="center"
-        spacing={2}
-      >
-        <Typography variant="h4" fontWeight={700}>
-          💬 Chat w/
-        </Typography>
-        <AccountAvatar
-          size={42}
-          emojiSize={20}
-          account={props.interlocutor}
-          accountProfileUriData={props.interlocutorProfileUriData}
-        />
-        <AccountLink
-          account={props.interlocutor}
-          accountProfileUriData={props.interlocutorProfileUriData}
-          variant="h4"
-        />
-      </Stack>
+      <Typography variant="h4" fontWeight={700}>
+        💬 Chat
+      </Typography>
       <Formik
         initialValues={formValues}
         validationSchema={formValidationSchema}

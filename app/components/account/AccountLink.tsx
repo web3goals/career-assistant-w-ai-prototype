@@ -12,6 +12,7 @@ export default function AccountLink(props: {
   accountProfileUriData?: ProfileUriData;
   color?: string;
   variant?: TypographyProps["variant"];
+  textAlign?: TypographyProps["textAlign"];
   sx?: SxProps;
 }) {
   return (
@@ -20,6 +21,7 @@ export default function AccountLink(props: {
         fontWeight={700}
         variant={props.variant || "body2"}
         color={props.color || theme.palette.primary.main}
+        textAlign={props.textAlign || "start"}
         sx={{ ...props.sx }}
       >
         {props.accountProfileUriData?.attributes[0].value
