@@ -34,13 +34,8 @@ import * as yup from "yup";
 export default function Chat() {
   const router = useRouter();
   const { interlocutor } = router.query;
-  const { handleError } = useError();
   const { address } = useAccount();
   const { chain } = useNetwork();
-  const [signer, setSigner] = useState<ethers.Signer | undefined>();
-  const [pgpDecryptedPvtKey, setPgpDecryptedPvtKey] = useState<
-    string | undefined
-  >();
 
   /**
    * Define connected account profile uri data
@@ -71,23 +66,65 @@ export default function Chat() {
     interlocutorProfileUri
   );
 
+  return (
+    <Layout maxWidth="md">
+      {address && interlocutor ? (
+        <>
+          <ChatMessages
+            connectedAccount={address}
+            connectedAccountProfileUriData={connectedAccountProfileUriData}
+            interlocutor={interlocutor.toString()}
+            interlocutorProfileUriData={interlocutorProfileUriData}
+          />
+        </>
+      ) : (
+        <>
+          <FullWidthSkeleton />
+        </>
+      )}
+    </Layout>
+  );
+}
+
+function ChatMessages(props: {
+  connectedAccount: string;
+  connectedAccountProfileUriData?: ProfileUriData;
+  interlocutor: string;
+  interlocutorProfileUriData?: ProfileUriData;
+}) {
+  const { handleError } = useError();
+  const [signer, setSigner] = useState<ethers.Signer | undefined>();
+  const [pgpDecryptedPvtKey, setPgpDecryptedPvtKey] = useState<
+    string | undefined
+  >();
+  const [messages, setMessages] = useState<
+    PushAPI.IMessageIPFS[] | undefined
+  >();
+
   /**
-   * Load signer and pgp decrypted pvt key
+   * Form states
+   */
+  const [formValues, setFormValues] = useState({
+    message: "",
+  });
+  const formValidationSchema = yup.object({
+    message: yup.string().required(),
+  });
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+
+  /**
+   * Function to load signer and pgp decrypted pvt key
    */
   async function loadSignerAndPgpDecryptedPvtKey() {
     try {
       setSigner(undefined);
       setPgpDecryptedPvtKey(undefined);
-      // Check address
-      if (!address) {
-        return;
-      }
       // Define signer
       const provider = new providers.Web3Provider((window as any).ethereum);
       const signer = provider.getSigner();
       // Get existing user
       let user = await PushAPI.user.get({
-        account: `eip155:${address}`,
+        account: `eip155:${props.connectedAccount}`,
         env: ENV.STAGING,
       });
       // Create user if not exists
@@ -110,59 +147,41 @@ export default function Chat() {
     }
   }
 
-  useEffect(() => {
-    loadSignerAndPgpDecryptedPvtKey();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address]);
-
-  return (
-    <Layout maxWidth="md">
-      {address && interlocutor && signer && pgpDecryptedPvtKey ? (
-        <>
-          <ChatMessages
-            connectedAccount={address}
-            connectedAccountProfileUriData={connectedAccountProfileUriData}
-            interlocutor={interlocutor.toString()}
-            interlocutorProfileUriData={interlocutorProfileUriData}
-            signer={signer}
-            pgpDecryptedPvtKey={pgpDecryptedPvtKey}
-          />
-        </>
-      ) : (
-        <>
-          <FullWidthSkeleton />
-        </>
-      )}
-    </Layout>
-  );
-}
-
-function ChatMessages(props: {
-  connectedAccount: string;
-  connectedAccountProfileUriData?: ProfileUriData;
-  interlocutor: string;
-  interlocutorProfileUriData?: ProfileUriData;
-  signer: ethers.Signer;
-  pgpDecryptedPvtKey: string;
-}) {
-  const { handleError } = useError();
-  const [messages, setMessages] = useState<
-    PushAPI.IMessageIPFS[] | undefined
-  >();
-
   /**
-   * Form states
+   * Function to load messages from push protocol
    */
-  const [formValues, setFormValues] = useState({
-    message: "",
-  });
-  const formValidationSchema = yup.object({
-    message: yup.string().required(),
-  });
-  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+  async function loadMessages() {
+    setMessages(undefined);
+    // Define messages
+    let messages: PushAPI.IMessageIPFS[] = [];
+    try {
+      // Check signer and pgpDecryptedPvtKey
+      if (!signer || !pgpDecryptedPvtKey) {
+        return;
+      }
+      // Define conversation hash
+      const conversationHash = await PushAPI.chat.conversationHash({
+        account: `eip155:${props.connectedAccount}`,
+        conversationId: `eip155:${props.interlocutor}`,
+        env: ENV.STAGING,
+      });
+      // Load chat history
+      messages = await PushAPI.chat.history({
+        threadhash: conversationHash.threadHash,
+        account: `eip155:${props.connectedAccount}`,
+        limit: 10,
+        toDecrypt: true,
+        pgpPrivateKey: pgpDecryptedPvtKey,
+        env: ENV.STAGING,
+      });
+    } catch (error: any) {
+      handleError(error, false);
+    }
+    setMessages(messages);
+  }
 
   /**
-   * Send message to push protocol
+   * Function to send message to push protocol
    */
   async function submitForm(values: any, actions: any) {
     try {
@@ -172,8 +191,8 @@ function ChatMessages(props: {
         messageContent: values.message,
         messageType: "Text",
         receiverAddress: `eip155:${props.interlocutor}`,
-        signer: props.signer,
-        pgpPrivateKey: props.pgpDecryptedPvtKey,
+        signer: signer,
+        pgpPrivateKey: pgpDecryptedPvtKey,
         env: ENV.STAGING,
       });
       // Reload messages
@@ -187,39 +206,15 @@ function ChatMessages(props: {
     }
   }
 
-  /**
-   * Load messages from push protocol
-   */
-  async function loadMessages() {
-    setMessages(undefined);
-    // Define messages
-    let messages: PushAPI.IMessageIPFS[] = [];
-    try {
-      // Define conversation hash
-      const conversationHash = await PushAPI.chat.conversationHash({
-        account: `eip155:${props.connectedAccount}`,
-        conversationId: `eip155:${props.interlocutor}`,
-        env: ENV.STAGING,
-      });
-      // Load chat history
-      messages = await PushAPI.chat.history({
-        threadhash: conversationHash.threadHash,
-        account: `eip155:${props.connectedAccount}`,
-        limit: 10,
-        toDecrypt: true,
-        pgpPrivateKey: props.pgpDecryptedPvtKey,
-        env: ENV.STAGING,
-      });
-    } catch (error: any) {
-      handleError(error, false);
-    }
-    setMessages(messages);
-  }
+  useEffect(() => {
+    loadSignerAndPgpDecryptedPvtKey();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.connectedAccount]);
 
   useEffect(() => {
     loadMessages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.connectedAccount, props.interlocutor]);
+  }, [props.connectedAccount, props.interlocutor, signer, pgpDecryptedPvtKey]);
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
