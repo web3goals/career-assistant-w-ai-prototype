@@ -35,7 +35,6 @@ import { Avatar, Box, Dialog, Stack, Typography } from "@mui/material";
 import axios from "axios";
 import { ethers } from "ethers";
 import { Form, Formik } from "formik";
-import { chain } from "lodash";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useState } from "react";
 import {
@@ -239,6 +238,7 @@ function InterviewMessages(props: {
       };
       // Update messages
       setMessages([...messages, userMessage, chatgptMessage]);
+      // Reset form
       actions?.resetForm();
     } catch (error: any) {
       handleError(error, true);
@@ -251,8 +251,9 @@ function InterviewMessages(props: {
    * Load messages
    */
   async function loadMessages() {
-    // Define system message
-    let messages: InterviewMessage[] = [];
+    setMessages(undefined);
+    // Define messages
+    const messages: InterviewMessage[] = [];
     // Add system messages
     messages.push({
       id: `${props.id}_0`,
@@ -414,7 +415,7 @@ function InterviewMessageCard(props: {
         )}
       </Box>
       {/* Right part */}
-      <Box ml={1.5}>
+      <Box width={1} ml={1.5} display="flex" flexDirection="column">
         {props.message.role === "assistant" ? (
           <Typography fontWeight={700} variant="body2">
             Bro
