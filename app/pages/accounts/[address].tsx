@@ -1,7 +1,7 @@
 import AccountInterviews from "@/components/account/AccountInterviews";
 import AccountProfile from "@/components/account/AccountProfile";
 import Layout from "@/components/layout";
-import { ThickDivider } from "@/components/styled";
+import { FullWidthSkeleton, ThickDivider } from "@/components/styled";
 import { useRouter } from "next/router";
 
 /**
@@ -13,12 +13,14 @@ export default function Account() {
 
   return (
     <Layout maxWidth="md">
-      {address && (
+      {address ? (
         <>
           <AccountProfile address={address.toString()} />
           <ThickDivider sx={{ my: 8 }} />
           <AccountInterviews address={address.toString()} />
         </>
+      ) : (
+        <FullWidthSkeleton />
       )}
     </Layout>
   );
