@@ -14,11 +14,11 @@ import { SnackbarProvider } from "notistack";
 import { useEffect, useState } from "react";
 import { theme } from "theme";
 import { getSupportedChains } from "utils/chains";
-import { configureChains, createConfig, WagmiConfig } from "wagmi";
+import { configureChains, createConfig, mainnet, WagmiConfig } from "wagmi";
 import { publicProvider } from "wagmi/providers/public";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [...getSupportedChains()],
+  [...getSupportedChains(), mainnet],
   [publicProvider()]
 );
 

@@ -6,7 +6,7 @@ import {
   Telegram,
   Twitter,
 } from "@mui/icons-material";
-import { Box, Divider, IconButton, Typography } from "@mui/material";
+import { Box, IconButton, Typography } from "@mui/material";
 import { Stack } from "@mui/system";
 import { FullWidthSkeleton, LargeLoadingButton } from "components/styled";
 import { profileContractAbi } from "contracts/abi/profileContract";
@@ -15,9 +15,10 @@ import useUriDataLoader from "hooks/useUriDataLoader";
 import Link from "next/link";
 import { isAddressesEqual } from "utils/addresses";
 import { chainToSupportedChainProfileContractAddress } from "utils/chains";
-import { addressToShortAddress, stringToAddress } from "utils/converters";
+import { stringToAddress } from "utils/converters";
 import { useAccount, useContractRead, useNetwork } from "wagmi";
 import AccountAvatar from "./AccountAvatar";
+import AccountLink from "./AccountLink";
 
 /**
  * A component with account profile.
@@ -49,11 +50,11 @@ export default function AccountProfile(props: { address: string }) {
           sx={{ mb: 3 }}
         />
         {/* Name */}
-        {profileUriData?.attributes?.[0]?.value && (
-          <Typography variant="h4" fontWeight={700} textAlign="center">
-            {profileUriData.attributes[0].value}
-          </Typography>
-        )}
+        <AccountLink
+          account={props.address}
+          accountProfileUriData={profileUriData}
+          variant="h4"
+        />
         {/* About */}
         {profileUriData?.attributes?.[1]?.value && (
           <Typography textAlign="center" sx={{ maxWidth: 480, mt: 1 }}>
@@ -118,33 +119,6 @@ export default function AccountProfile(props: { address: string }) {
                 <Instagram />
               </IconButton>
             )}
-            {(profileUriData?.attributes?.[2]?.value ||
-              profileUriData?.attributes?.[3]?.value ||
-              profileUriData?.attributes?.[4]?.value ||
-              profileUriData?.attributes?.[5]?.value ||
-              profileUriData?.attributes?.[6]?.value) && (
-              <Divider
-                flexItem
-                orientation="vertical"
-                variant="middle"
-                sx={{
-                  display: { xs: "none", md: "block" },
-                  borderRightWidth: 4,
-                  ml: 1.3,
-                  mr: 2,
-                }}
-              />
-            )}
-          </Stack>
-          {/* Address */}
-          <Stack
-            direction="row"
-            alignItems="center"
-            sx={{ mb: { xs: 1, md: 0 } }}
-          >
-            <Typography fontWeight={700} sx={{ mr: 1.5 }}>
-              {addressToShortAddress(props.address)}
-            </Typography>
           </Stack>
         </Stack>
         {/* Owner buttons */}
