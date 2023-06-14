@@ -136,7 +136,7 @@ export default function AccountProfile(props: { address: string }) {
               />
             )}
           </Stack>
-          {/* Address, reputation */}
+          {/* Address */}
           <Stack
             direction="row"
             alignItems="center"
@@ -149,10 +149,31 @@ export default function AccountProfile(props: { address: string }) {
         </Stack>
         {/* Owner buttons */}
         {isAddressesEqual(address, props.address) && (
-          <Stack direction="column" spacing={2} sx={{ mt: 2 }}>
-            <Link href="/accounts/edit" legacyBehavior>
-              <LargeLoadingButton variant="outlined">
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2 }}>
+            <Link href="/chats">
+              <LargeLoadingButton variant="contained" sx={{ width: 240 }}>
+                Open Chats
+              </LargeLoadingButton>
+            </Link>
+            <Link href="/accounts/edit">
+              <LargeLoadingButton variant="outlined" sx={{ width: 240 }}>
                 {profileUriData ? "Edit Profile" : "Create Profile"}
+              </LargeLoadingButton>
+            </Link>
+          </Stack>
+        )}
+        {/* Not owner buttons */}
+        {!isAddressesEqual(address, props.address) && (
+          <Stack
+            width={1}
+            direction="column"
+            spacing={2}
+            alignItems="center"
+            sx={{ mt: 2 }}
+          >
+            <Link href={`/chats/${props.address}`}>
+              <LargeLoadingButton variant="contained">
+                Send message
               </LargeLoadingButton>
             </Link>
           </Stack>
