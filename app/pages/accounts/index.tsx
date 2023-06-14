@@ -53,7 +53,7 @@ export default function Accounts() {
   return (
     <Layout maxWidth="md">
       <Typography variant="h4" fontWeight={700} textAlign="center">
-        ✨ Great people
+        ✨ People with great resumes
       </Typography>
       <EntityList
         entities={addresses}
