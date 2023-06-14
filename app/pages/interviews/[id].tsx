@@ -1,5 +1,6 @@
 import AccountAvatar from "@/components/account/AccountAvatar";
 import AccountLink from "@/components/account/AccountLink";
+import EntityList from "@/components/entity/EntityList";
 import FormikHelper from "@/components/helper/FormikHelper";
 import Layout from "@/components/layout";
 import {
@@ -79,11 +80,6 @@ export default function Interview() {
   const topic = INTERVIEW_TOPICS.find((element) => element.id === topicId);
 
   /**
-   * Define points
-   */
-  const { points } = useInterviewPointsLoader(id?.toString());
-
-  /**
    * Define owner profile uri data
    */
   const { data: ownerProfileUri } = useContractRead({
@@ -97,15 +93,15 @@ export default function Interview() {
 
   return (
     <Layout maxWidth="md">
-      {id && owner && topic && points ? (
+      {id && owner && topic ? (
         <>
           <InteviewTopic
+            id={id.toString()}
             topic={topic}
             owner={owner}
             ownerProfileUriData={ownerProfileUriData}
-            points={points}
           />
-          <ThickDivider sx={{ my: 8 }} />
+          <ThickDivider sx={{ mt: 8 }} />
           <InterviewMessages
             id={id.toString()}
             topic={topic}
@@ -121,40 +117,44 @@ export default function Interview() {
 }
 
 function InteviewTopic(props: {
+  id: string;
   topic: InterviewTopic;
   owner: string;
   ownerProfileUriData?: ProfileUriData;
-  points: number;
 }) {
+  const { points } = useInterviewPointsLoader(props.id);
+
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
       <Avatar sx={{ width: 196, height: 196 }} src={props.topic.imageAlt} />
       <Typography variant="h4" fontWeight={700} textAlign="center" mt={3}>
         {props.topic.title}
       </Typography>
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        justifyContent="center"
-        alignItems="center"
-        spacing={1}
-        mt={1}
-      >
-        <Typography>Where</Typography>
-        <AccountAvatar
-          size={24}
-          emojiSize={12}
-          account={props.owner}
-          accountProfileUriData={props.ownerProfileUriData}
-        />
-        <AccountLink
-          account={props.owner}
-          accountProfileUriData={props.ownerProfileUriData}
-          variant="body1"
-        />
-        <Typography>
-          earned <strong>{props.points} XP</strong>
-        </Typography>
-      </Stack>
+      {points !== undefined && (
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          justifyContent="center"
+          alignItems="center"
+          spacing={1}
+          mt={1}
+        >
+          <Typography>Where</Typography>
+          <AccountAvatar
+            size={24}
+            emojiSize={12}
+            account={props.owner}
+            accountProfileUriData={props.ownerProfileUriData}
+          />
+          <AccountLink
+            account={props.owner}
+            accountProfileUriData={props.ownerProfileUriData}
+            variant="body1"
+          />
+          <Typography>
+            earned <strong>{points} XP</strong>
+          </Typography>
+        </Stack>
+      )}
     </Box>
   );
 }
@@ -250,9 +250,11 @@ function InterviewMessages(props: {
   /**
    * Load messages
    */
-  useEffect(() => {
+  async function loadMessages() {
     // Define system message
-    const systemMessage: InterviewMessage = {
+    let messages: InterviewMessage[] = [];
+    // Add system messages
+    messages.push({
       id: `${props.id}_0`,
       interview: props.id.toString(),
       timestamp: 0,
@@ -260,35 +262,36 @@ function InterviewMessages(props: {
       content: props.topic.prompt,
       points: 0,
       isSaved: true,
-    };
-    // Load messages from tableland
-    axios
-      .get(
+    });
+    // Add messages loaded from tableland
+    try {
+      const response = await axios.get(
         `https://testnets.tableland.network/api/v1/query?statement=select%20%2A%20from%20${process.env.NEXT_PUBLIC_TABLELAND_TABLE}%20where%20interview%20%3D%20${props.id}`
-      )
-      .then((response) => {
-        const loadedMessages: InterviewMessage[] = [];
-        for (const message of response.data) {
-          loadedMessages.push({
-            id: message.id,
-            interview: String(message.interview),
-            timestamp: message.timestamp,
-            role: message.role,
-            content: atob(message.content),
-            points: message.points,
-            isSaved: true,
-          });
-        }
-        setMessages([systemMessage, ...loadedMessages]);
-      })
-      .catch((error) => {
-        // If tableland row not found then save only system message
-        if (error?.response?.data?.message === "Row not found") {
-          setMessages([systemMessage]);
-        } else {
-          handleError(error, true);
-        }
-      });
+      );
+      for (const message of response.data) {
+        messages.push({
+          id: message.id,
+          interview: String(message.interview),
+          timestamp: message.timestamp,
+          role: message.role,
+          content: atob(message.content),
+          points: message.points,
+          isSaved: true,
+        });
+      }
+    } catch (error: any) {
+      if (error?.response?.data?.message !== "Row not found") {
+        handleError(error, true);
+      }
+    }
+    setMessages(messages);
+  }
+
+  /**
+   * Load messages
+   */
+  useEffect(() => {
+    loadMessages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.id]);
 
@@ -311,7 +314,7 @@ function InterviewMessages(props: {
             >
               <FormikHelper onChange={(values: any) => setFormValues(values)} />
               {/* Message input */}
-              <WidgetBox bgcolor={palette.blue} mt={2}>
+              <WidgetBox bgcolor={palette.blue} mt={6}>
                 <WidgetTitle>Message</WidgetTitle>
                 <WidgetInputTextField
                   id="message"
@@ -364,64 +367,70 @@ function InterviewMessages(props: {
           )}
         </Formik>
       )}
-      {messages && (
-        <Box width={1} mt={2}>
-          {messages
-            .slice(0)
-            .reverse()
-            .map((message, index) => {
-              if (message.role === "system") {
-                return <Box key={index} />;
-              }
-              return (
-                <CardBox
-                  key={index}
-                  sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    borderColor: message.isSaved
-                      ? palette.divider
-                      : palette.blue,
-                    mt: 2,
-                  }}
-                >
-                  {/* Left part */}
-                  <Box>
-                    {message.role === "assistant" ? (
-                      <Avatar sx={{ width: 64, height: 64 }}>💪</Avatar>
-                    ) : (
-                      <AccountAvatar
-                        account={props.owner}
-                        accountProfileUriData={props.ownerProfileUriData}
-                        size={64}
-                        emojiSize={28}
-                      />
-                    )}
-                  </Box>
-                  {/* Right part */}
-                  <Box ml={1.5}>
-                    {message.role === "assistant" ? (
-                      <Typography fontWeight={700} variant="body2">
-                        Bro
-                      </Typography>
-                    ) : (
-                      <AccountLink
-                        account={props.owner}
-                        accountProfileUriData={props.ownerProfileUriData}
-                      />
-                    )}
-                    <Typography variant="body2" color="text.secondary">
-                      {timestampToDate(message.timestamp)?.toLocaleString()}
-                    </Typography>
-                    <Typography mt={1}>{message.content}</Typography>
-                  </Box>
-                </CardBox>
-              );
-            })}
-        </Box>
-      )}
-      {!messages && <FullWidthSkeleton />}
+      <EntityList
+        entities={messages?.slice(0).reverse()}
+        renderEntityCard={(message, index) => (
+          <InterviewMessageCard
+            message={message}
+            owner={props.owner}
+            ownerProfileUriData={props.ownerProfileUriData}
+            key={index}
+          />
+        )}
+        noEntitiesText="😐 no messages"
+        sx={{ mt: 6 }}
+      />
     </Box>
+  );
+}
+
+function InterviewMessageCard(props: {
+  message: InterviewMessage;
+  owner: string;
+  ownerProfileUriData?: ProfileUriData;
+}) {
+  return (
+    <CardBox
+      sx={{
+        display: "flex",
+        flexDirection: "row",
+        borderColor: props.message.isSaved ? palette.divider : palette.blue,
+        mt: 2,
+      }}
+    >
+      {/* Left part */}
+      <Box>
+        {props.message.role === "assistant" ? (
+          <Avatar sx={{ background: palette.divider, width: 64, height: 64 }}>
+            <Typography fontSize={28}>💪</Typography>
+          </Avatar>
+        ) : (
+          <AccountAvatar
+            account={props.owner}
+            accountProfileUriData={props.ownerProfileUriData}
+            size={64}
+            emojiSize={28}
+          />
+        )}
+      </Box>
+      {/* Right part */}
+      <Box ml={1.5}>
+        {props.message.role === "assistant" ? (
+          <Typography fontWeight={700} variant="body2">
+            Bro
+          </Typography>
+        ) : (
+          <AccountLink
+            account={props.owner}
+            accountProfileUriData={props.ownerProfileUriData}
+          />
+        )}
+        <Typography variant="body2" color="text.secondary">
+          {timestampToDate(props.message.timestamp)?.toLocaleString()}
+        </Typography>
+        <Typography mt={1}>{props.message.content}</Typography>
+      </Box>
+    </CardBox>
   );
 }
 

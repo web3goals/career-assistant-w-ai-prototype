@@ -22,7 +22,6 @@ export default function useInterviewPointsLoader(interviewId?: string): {
       .catch((error) => {
         handleError(error, true);
       });
-    setPoints(42);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewId]);
 
