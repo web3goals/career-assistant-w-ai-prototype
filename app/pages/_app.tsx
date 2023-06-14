@@ -18,7 +18,7 @@ import { configureChains, createConfig, mainnet, WagmiConfig } from "wagmi";
 import { publicProvider } from "wagmi/providers/public";
 
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [...getSupportedChains(), mainnet],
+  [...getSupportedChains(), { ...mainnet, name: "Mainnet (Not Supported)" }],
   [publicProvider()]
 );
 
