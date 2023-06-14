@@ -5,12 +5,15 @@ import FormikHelper from "@/components/helper/FormikHelper";
 import Layout from "@/components/layout";
 import {
   CardBox,
+  DialogCenterContent,
   FullWidthSkeleton,
   LargeLoadingButton,
+  ThickDivider,
   WidgetBox,
   WidgetInputTextField,
   WidgetTitle,
 } from "@/components/styled";
+import { DialogContext } from "@/context/dialog";
 import { profileContractAbi } from "@/contracts/abi/profileContract";
 import useError from "@/hooks/useError";
 import useUriDataLoader from "@/hooks/useUriDataLoader";
@@ -18,13 +21,16 @@ import { palette } from "@/theme/palette";
 import { ProfileUriData } from "@/types";
 import { chainToSupportedChainProfileContractAddress } from "@/utils/chains";
 import { stringToAddress } from "@/utils/converters";
-import { Box, Stack, Typography } from "@mui/material";
+import { Audio, Video } from "@huddle01/react/components";
+import { useLobby, usePeers, useRoom, useVideo } from "@huddle01/react/hooks";
+import { Box, Dialog, Stack, Typography } from "@mui/material";
 import * as PushAPI from "@pushprotocol/restapi";
 import { ENV } from "@pushprotocol/restapi/src/lib/constants";
+import axios from "axios";
 import { ethers, providers } from "ethers";
 import { Form, Formik } from "formik";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useAccount, useContractRead, useNetwork } from "wagmi";
 import * as yup from "yup";
 
@@ -70,6 +76,11 @@ export default function Chat() {
     <Layout maxWidth="md">
       {address && interlocutor ? (
         <>
+          <ChatStream
+            interlocutor={interlocutor.toString()}
+            interlocutorProfileUriData={interlocutorProfileUriData}
+          />
+          <ThickDivider sx={{ my: 8 }} />
           <ChatMessages
             connectedAccount={address}
             connectedAccountProfileUriData={connectedAccountProfileUriData}
@@ -83,6 +94,332 @@ export default function Chat() {
         </>
       )}
     </Layout>
+  );
+}
+
+function ChatStream(props: {
+  interlocutor: string;
+  interlocutorProfileUriData?: ProfileUriData;
+}) {
+  const [roomId, setRoomId] = useState<string | undefined>();
+  const { joinLobby, isLobbyJoined } = useLobby();
+  const { isRoomJoined } = useRoom();
+
+  /**
+   * Join room if room is defined
+   */
+  useEffect(() => {
+    if (roomId && joinLobby.isCallable) {
+      joinLobby(roomId);
+    }
+  }, [roomId, joinLobby]);
+
+  return (
+    <Box display="flex" flexDirection="column" alignItems="center">
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        justifyContent="center"
+        alignItems="center"
+        spacing={2}
+      >
+        <Typography variant="h4" fontWeight={700}>
+          👀 Meeting w/
+        </Typography>
+        <AccountAvatar
+          size={42}
+          emojiSize={20}
+          account={props.interlocutor}
+          accountProfileUriData={props.interlocutorProfileUriData}
+        />
+        <AccountLink
+          account={props.interlocutor}
+          accountProfileUriData={props.interlocutorProfileUriData}
+          variant="h4"
+        />
+      </Stack>
+      {roomId && (
+        <Typography textAlign="center" mt={1}>
+          ID is <strong>{roomId}</strong>
+        </Typography>
+      )}
+      <Box
+        width={1}
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        mt={4}
+      >
+        {isRoomJoined ? (
+          <ChatStreamRoom />
+        ) : isLobbyJoined ? (
+          <ChatStreamLobby />
+        ) : !roomId ? (
+          <ChatStreamRoomDeterminer
+            onDetermined={(roomId) => setRoomId(roomId)}
+          />
+        ) : (
+          <FullWidthSkeleton />
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+function ChatStreamRoomDeterminer(props: {
+  onDetermined: (roomId: string) => void;
+}) {
+  const { showDialog, closeDialog } = useContext(DialogContext);
+  const { handleError } = useError();
+  const [isRoomCreating, setIsRoomCreating] = useState(false);
+
+  /**
+   * Function to create room
+   */
+  async function createRoom() {
+    try {
+      setIsRoomCreating(true);
+      const response = await axios.get("/api/streams/createRoom");
+      props.onDetermined(response.data.roomId);
+    } catch (error: any) {
+      handleError(error, true);
+      setIsRoomCreating(false);
+    }
+  }
+
+  return (
+    <Stack spacing={2}>
+      <LargeLoadingButton
+        variant="contained"
+        loading={isRoomCreating}
+        disabled={isRoomCreating}
+        onClick={() => createRoom()}
+      >
+        Start
+      </LargeLoadingButton>
+      <LargeLoadingButton
+        variant="outlined"
+        disabled={isRoomCreating}
+        onClick={() =>
+          showDialog?.(
+            <ChatStreamRoomDeterminerDialog
+              onDetermined={props.onDetermined}
+              onClose={closeDialog}
+            />
+          )
+        }
+      >
+        Join
+      </LargeLoadingButton>
+    </Stack>
+  );
+}
+
+function ChatStreamRoomDeterminerDialog(props: {
+  onDetermined: (roomId: string) => void;
+  isClose?: boolean;
+  onClose?: Function;
+}) {
+  /**
+   * Dialog states
+   */
+  const [isOpen, setIsOpen] = useState(!props.isClose);
+
+  /**
+   * Form states
+   */
+  const [formValues, setFormValues] = useState({
+    roomId: "",
+  });
+  const formValidationSchema = yup.object({
+    roomId: yup.string().required(),
+  });
+
+  /**
+   * Close dialog
+   */
+  async function close() {
+    setIsOpen(false);
+    props.onClose?.();
+  }
+
+  /**
+   * Function to submit form
+   */
+  async function submitForm(values: any) {
+    props.onDetermined(values.roomId);
+    close();
+  }
+
+  return (
+    <Dialog open={isOpen} onClose={close} maxWidth="sm" fullWidth>
+      <DialogCenterContent>
+        <Typography variant="h4" fontWeight={700} textAlign="center">
+          👀 Join meeting
+        </Typography>
+        <Formik
+          initialValues={formValues}
+          validationSchema={formValidationSchema}
+          onSubmit={submitForm}
+        >
+          {({ values, errors, touched, handleChange }) => (
+            <Form
+              style={{
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <FormikHelper onChange={(values: any) => setFormValues(values)} />
+              {/* Room id input */}
+              <WidgetBox bgcolor={palette.blue} mt={4}>
+                <WidgetTitle>ID</WidgetTitle>
+                <WidgetInputTextField
+                  id="roomId"
+                  name="roomId"
+                  placeholder="pzh-cmxg-led"
+                  value={values.roomId}
+                  onChange={handleChange}
+                  error={touched.roomId && Boolean(errors.roomId)}
+                  helperText={touched.roomId && errors.roomId}
+                  multiline
+                  maxRows={4}
+                  sx={{ width: 1 }}
+                />
+              </WidgetBox>
+              <LargeLoadingButton
+                variant="outlined"
+                type="submit"
+                sx={{ mt: 2 }}
+              >
+                Submit
+              </LargeLoadingButton>
+            </Form>
+          )}
+        </Formik>
+      </DialogCenterContent>
+    </Dialog>
+  );
+}
+
+function ChatStreamLobby() {
+  const { joinRoom } = useRoom();
+  const { fetchVideoStream, stopVideoStream, stream: videoStream } = useVideo();
+  const videoStreamRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoStream && videoStreamRef.current) {
+      videoStreamRef.current.srcObject = videoStream;
+    }
+  }, [videoStreamRef, videoStream]);
+
+  return (
+    <>
+      {/* Buttons */}
+      <Stack spacing={2}>
+        <LargeLoadingButton
+          variant="outlined"
+          disabled={!fetchVideoStream.isCallable && !stopVideoStream.isCallable}
+          onClick={() => {
+            if (fetchVideoStream.isCallable) {
+              fetchVideoStream();
+            } else if (stopVideoStream.isCallable) {
+              stopVideoStream();
+            }
+          }}
+        >
+          {fetchVideoStream.isCallable
+            ? "Enable camera"
+            : stopVideoStream.isCallable
+            ? "Disable camera"
+            : "Loading camera..."}
+        </LargeLoadingButton>
+        <LargeLoadingButton
+          variant="contained"
+          disabled={!joinRoom.isCallable}
+          onClick={joinRoom}
+        >
+          Join
+        </LargeLoadingButton>
+      </Stack>
+      {/* Video stream */}
+      {videoStream?.active && (
+        <Box mt={4}>
+          <video
+            ref={videoStreamRef}
+            autoPlay
+            muted
+            style={{ width: "360px", borderRadius: "24px" }}
+          />
+        </Box>
+      )}
+    </>
+  );
+}
+
+function ChatStreamRoom() {
+  const { produceVideo, stopProducingVideo, stream: videoStream } = useVideo();
+  const { peers } = usePeers();
+  const videoStreamRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoStream && videoStreamRef.current) {
+      videoStreamRef.current.srcObject = videoStream;
+    }
+  }, [videoStreamRef, videoStream]);
+
+  return (
+    <>
+      {/* Buttons */}
+      <Stack spacing={2}>
+        <LargeLoadingButton
+          variant="outlined"
+          disabled={!produceVideo.isCallable && !stopProducingVideo.isCallable}
+          onClick={() => {
+            if (produceVideo.isCallable) {
+              produceVideo(videoStream);
+            } else if (stopProducingVideo.isCallable) {
+              stopProducingVideo();
+            }
+          }}
+        >
+          {produceVideo.isCallable
+            ? "Produce camera"
+            : stopProducingVideo.isCallable
+            ? "Stop producing camera"
+            : "Loading camera..."}
+        </LargeLoadingButton>
+      </Stack>
+      {/* Video stream */}
+      {videoStream?.active && (
+        <Box mt={4}>
+          <video
+            ref={videoStreamRef}
+            autoPlay
+            muted
+            style={{ width: "360px", borderRadius: "24px" }}
+          />
+        </Box>
+      )}
+      {/* Peers */}
+      <Box mt={4}>
+        {Object.values(peers)
+          .filter((peer) => peer.cam)
+          .map((peer) => (
+            <Video
+              key={peer.peerId}
+              peerId={peer.peerId}
+              track={peer.cam}
+              style={{ width: "180px", borderRadius: "24px" }}
+            />
+          ))}
+        {Object.values(peers)
+          .filter((peer) => peer.mic)
+          .map((peer) => (
+            <Audio key={peer.peerId} peerId={peer.peerId} track={peer.mic} />
+          ))}
+      </Box>
+    </>
   );
 }
 
@@ -265,7 +602,7 @@ function ChatMessages(props: {
                 onChange={handleChange}
                 error={touched.message && Boolean(errors.message)}
                 helperText={touched.message && errors.message}
-                disabled={isFormSubmitting}
+                disabled={!messages || isFormSubmitting}
                 multiline
                 maxRows={4}
                 sx={{ width: 1 }}
