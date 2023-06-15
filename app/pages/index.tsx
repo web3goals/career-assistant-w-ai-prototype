@@ -37,8 +37,7 @@ export default function Landing() {
         </Box>
         <Typography variant="h1" textAlign="center" mt={2}>
           <strong>AI assistant</strong> for building a{" "}
-          <strong>great resume</strong> and getting the{" "}
-          <strong>dream job</strong>
+          <strong>great resume</strong> and getting a <strong>dream job</strong>
         </Typography>
         <Typography textAlign="center" mt={4}>
           🎤 Complete technical interviews

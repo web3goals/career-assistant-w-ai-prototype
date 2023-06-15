@@ -1,6 +1,6 @@
 # 💪 AI Career Bro
 
-AI assistant for building a great resume and getting the dream job.
+AI assistant for building a great resume and getting a dream job.
 
 ## 🔗 Application
 
