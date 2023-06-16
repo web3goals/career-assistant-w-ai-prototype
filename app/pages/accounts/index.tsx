@@ -2,13 +2,20 @@ import AccountAvatar from "@/components/account/AccountAvatar";
 import AccountLink from "@/components/account/AccountLink";
 import EntityList from "@/components/entity/EntityList";
 import Layout from "@/components/layout";
-import { CardBox } from "@/components/styled";
+import { CardBox, FullWidthSkeleton } from "@/components/styled";
+import { INTERVIEW_TOPICS } from "@/constants/interviewTopics";
+import { interviewContractAbi } from "@/contracts/abi/interviewContract";
 import { profileContractAbi } from "@/contracts/abi/profileContract";
+import useInterviewPointsLoader from "@/hooks/useInterviewPointsLoader";
 import useUriDataLoader from "@/hooks/useUriDataLoader";
+import { palette } from "@/theme/palette";
 import { ProfileUriData } from "@/types";
-import { chainToSupportedChainProfileContractAddress } from "@/utils/chains";
+import {
+  chainToSupportedChainInterviewContractAddress,
+  chainToSupportedChainProfileContractAddress,
+} from "@/utils/chains";
 import { stringToAddress } from "@/utils/converters";
-import { Box, SxProps, Typography } from "@mui/material";
+import { Box, Stack, SxProps, Typography } from "@mui/material";
 import { ethers } from "ethers";
 import {
   paginatedIndexesConfig,
@@ -81,8 +88,44 @@ function AccountCard(props: { address?: string; sx?: SxProps }) {
   });
   const { data: profileUriData } = useUriDataLoader<ProfileUriData>(profileUri);
 
+  /**
+   * Define interview ids
+   */
+  const { data: interview0id } = useContractRead({
+    address: chainToSupportedChainInterviewContractAddress(chain),
+    abi: interviewContractAbi,
+    functionName: "find",
+    args: [
+      stringToAddress(props.address) || ethers.constants.AddressZero,
+      INTERVIEW_TOPICS[0].id,
+    ],
+  });
+  const { data: interview1id } = useContractRead({
+    address: chainToSupportedChainInterviewContractAddress(chain),
+    abi: interviewContractAbi,
+    functionName: "find",
+    args: [
+      stringToAddress(props.address) || ethers.constants.AddressZero,
+      INTERVIEW_TOPICS[1].id,
+    ],
+  });
+
+  /**
+   * Define interview points
+   */
+  const { points: interview0points } = useInterviewPointsLoader(
+    interview0id?.toString()
+  );
+  const { points: interview1points } = useInterviewPointsLoader(
+    interview1id?.toString()
+  );
+
   if (!props.address) {
     return <></>;
+  }
+
+  if (interview0points === undefined || interview1points === undefined) {
+    return <FullWidthSkeleton />;
   }
 
   return (
@@ -103,10 +146,22 @@ function AccountCard(props: { address?: string; sx?: SxProps }) {
           accountProfileUriData={profileUriData}
         />
         {profileUriData?.attributes[1].value && (
-          <Typography variant="body2" color="text.secondary" mt={0.5}>
+          <Typography variant="body2" mt={0.5}>
             {profileUriData?.attributes[1].value}
           </Typography>
         )}
+        <Stack direction="row" spacing={2} mt={2}>
+          <Typography variant="body2" fontWeight={700} color={palette.yellow}>
+            {INTERVIEW_TOPICS[0].titleAlt} {interview0points} XP
+          </Typography>
+          <Typography
+            variant="body2"
+            fontWeight={700}
+            color={palette.purpleLight}
+          >
+            {INTERVIEW_TOPICS[1].titleAlt} {interview1points} XP
+          </Typography>
+        </Stack>
       </Box>
     </CardBox>
   );

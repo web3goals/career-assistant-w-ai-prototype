@@ -1,6 +1,7 @@
 export type InterviewTopic = {
   id: string;
   title: string;
+  titleAlt: string;
   image: string;
   imageAlt: string;
   prompt: string;

@@ -4,6 +4,7 @@ export const INTERVIEW_TOPICS: InterviewTopic[] = [
   {
     id: "javascript",
     title: "Interview w/ Bro about JavaScript",
+    titleAlt: "JavaScript",
     image: "/images/javascript.png",
     imageAlt: "/images/javascriptAlt.png",
     prompt:
@@ -12,6 +13,7 @@ export const INTERVIEW_TOPICS: InterviewTopic[] = [
   {
     id: "solidity",
     title: "Interview w/ Bro about Solidity",
+    titleAlt: "Solidity",
     image: "/images/solidity.png",
     imageAlt: "/images/solidityAlt.png",
     prompt:
