@@ -20,4 +20,4 @@ https://ai-career-bro-app.vercel.app/
 
 ## 🏗️ Architecture
 
-...
+![Architecture](architecture.png)
