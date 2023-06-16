@@ -59,7 +59,7 @@ function AccountInterview(props: {
   const { chain } = useNetwork();
   const { address } = useAccount();
 
-  const { data: id, isSuccess } = useContractRead({
+  const { data: id } = useContractRead({
     address: chainToSupportedChainInterviewContractAddress(chain),
     abi: interviewContractAbi,
     functionName: "find",
