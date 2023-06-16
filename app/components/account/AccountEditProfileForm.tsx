@@ -1,4 +1,5 @@
 import { ProfileUriData } from "@/types";
+import { AttachFileOutlined } from "@mui/icons-material";
 import {
   Avatar,
   FormControl,
@@ -51,6 +52,10 @@ export default function AccountEditProfileForm(props: {
 
   // Form states
   const [formImageValue, setFormImageValue] = useState<{
+    file: any;
+    uri: any;
+  }>();
+  const [formResumeValue, setFormResumeValue] = useState<{
     file: any;
     uri: any;
   }>();
@@ -147,6 +152,36 @@ export default function AccountEditProfileForm(props: {
     }
   }
 
+  async function onResumeChange(files: any[]) {
+    try {
+      // Get file
+      const file = files?.[0];
+      if (!file) {
+        return;
+      }
+      // Check file size
+      const isLessThan10Mb = file.size / 1024 / 1024 < 10;
+      if (!isLessThan10Mb) {
+        throw new Error(
+          "Only files with size smaller than 10MB are currently supported!"
+        );
+      }
+      // Read and save file
+      const fileReader = new FileReader();
+      fileReader.onload = () => {
+        if (fileReader.readyState === 2) {
+          setFormResumeValue({
+            file: file,
+            uri: fileReader.result,
+          });
+        }
+      };
+      fileReader.readAsDataURL(file);
+    } catch (error: any) {
+      handleError(error, true);
+    }
+  }
+
   async function submit(values: any) {
     try {
       setIsFormSubmitting(true);
@@ -156,6 +191,13 @@ export default function AccountEditProfileForm(props: {
         const { uri } = await uploadFileToIpfs(formImageValue.file);
         imageIpfsUri = uri;
       }
+      // Upload resume to ipfs
+      let resumeIpfsUri;
+      if (formResumeValue?.file) {
+        const { uri } = await uploadFileToIpfs(formResumeValue.file);
+        resumeIpfsUri = uri;
+      }
+      // Define profile uri data
       const profileUriData: ProfileUriData = {
         name: "AI Career Bro - Profile",
         image: imageIpfsUri || props.profileData?.image || "",
@@ -167,6 +209,11 @@ export default function AccountEditProfileForm(props: {
           { trait_type: "twitter", value: values.twitter },
           { trait_type: "telegram", value: values.telegram },
           { trait_type: "instagram", value: values.instagram },
+          {
+            trait_type: "resume",
+            value:
+              resumeIpfsUri || props.profileData?.attributes?.[7]?.value || "",
+          },
         ],
       };
       // Upload updated profile data to ipfs
@@ -380,6 +427,47 @@ export default function AccountEditProfileForm(props: {
               {touched.instagram && errors.instagram}
             </FormHelperText>
           </FormControl>
+          {/* Resume */}
+          <Dropzone
+            multiple={false}
+            disabled={isFormDisabled}
+            onDrop={(files) => onResumeChange(files)}
+          >
+            {({ getRootProps, getInputProps }) => (
+              <div {...getRootProps()} style={{ width: "100%" }}>
+                <input {...getInputProps()} />
+                <FormControl fullWidth sx={{ mt: 2 }}>
+                  <InputLabel htmlFor="resume">Resume</InputLabel>
+                  <OutlinedInput
+                    fullWidth
+                    id="resume"
+                    name="resume"
+                    label="Resume"
+                    placeholder="Drag 'n' drop some files here, or click to select files"
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <AttachFileOutlined sx={{ fontSize: 16 }} />
+                      </InputAdornment>
+                    }
+                    multiline={true}
+                    readOnly={true}
+                    value={
+                      props.profileData?.attributes?.[7]?.value ||
+                      formResumeValue?.file?.name
+                    }
+                    onChange={handleChange}
+                    error={touched.instagram && Boolean(errors.instagram)}
+                    disabled={isFormDisabled}
+                  />
+                  <FormHelperText
+                    error={touched.instagram && Boolean(errors.instagram)}
+                  >
+                    {touched.instagram && errors.instagram}
+                  </FormHelperText>
+                </FormControl>
+              </div>
+            )}
+          </Dropzone>
           {/* Submit button */}
           <ExtraLargeLoadingButton
             loading={

@@ -6,7 +6,13 @@ import {
   Telegram,
   Twitter,
 } from "@mui/icons-material";
-import { Box, IconButton, Typography } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Typography,
+  Link as MuiLink,
+  Divider,
+} from "@mui/material";
 import { Stack } from "@mui/system";
 import { FullWidthSkeleton, LargeLoadingButton } from "components/styled";
 import { profileContractAbi } from "contracts/abi/profileContract";
@@ -15,7 +21,7 @@ import useUriDataLoader from "hooks/useUriDataLoader";
 import Link from "next/link";
 import { isAddressesEqual } from "utils/addresses";
 import { chainToSupportedChainProfileContractAddress } from "utils/chains";
-import { stringToAddress } from "utils/converters";
+import { ipfsUriToHttpUri, stringToAddress } from "utils/converters";
 import { useAccount, useContractRead, useNetwork } from "wagmi";
 import AccountAvatar from "./AccountAvatar";
 import AccountLink from "./AccountLink";
@@ -66,6 +72,10 @@ export default function AccountProfile(props: { address: string }) {
           direction={{ xs: "column-reverse", md: "row" }}
           alignItems="center"
           mt={1.5}
+          divider={
+            <Divider orientation="vertical" flexItem sx={{ borderWidth: 2 }} />
+          }
+          spacing={2}
         >
           {/* Email and links */}
           <Stack direction="row" alignItems="center">
@@ -120,6 +130,15 @@ export default function AccountProfile(props: { address: string }) {
               </IconButton>
             )}
           </Stack>
+          {profileUriData?.attributes?.[7]?.value && (
+            <MuiLink
+              href={ipfsUriToHttpUri(profileUriData.attributes[7].value)}
+              target="_blank"
+              fontWeight={700}
+            >
+              🔗 Resume
+            </MuiLink>
+          )}
         </Stack>
         {/* Owner buttons */}
         {isAddressesEqual(address, props.address) && (

@@ -27,6 +27,7 @@ export type ProfileUriData = {
     { trait_type: "website"; value: string },
     { trait_type: "twitter"; value: string },
     { trait_type: "telegram"; value: string },
-    { trait_type: "instagram"; value: string }
+    { trait_type: "instagram"; value: string },
+    { trait_type: "resume"; value: string }
   ];
 };
