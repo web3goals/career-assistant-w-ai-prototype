@@ -390,6 +390,10 @@ function InterviewMessageCard(props: {
   owner: string;
   ownerProfileUriData?: ProfileUriData;
 }) {
+  if (props.message.role === "system") {
+    return <></>;
+  }
+
   return (
     <CardBox
       sx={{
