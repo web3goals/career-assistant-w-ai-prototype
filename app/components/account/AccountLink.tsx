@@ -1,10 +1,8 @@
 import { ProfileUriData } from "@/types";
 import { Link as MuiLink, SxProps, TypographyProps } from "@mui/material";
-import { ethers } from "ethers";
 import Link from "next/link";
 import { theme } from "theme";
-import { addressToShortAddress, stringToAddress } from "utils/converters";
-import { useEnsName } from "wagmi";
+import { addressToShortAddress } from "utils/converters";
 
 /**
  * Component with account link.
@@ -17,22 +15,9 @@ export default function AccountLink(props: {
   textAlign?: TypographyProps["textAlign"];
   sx?: SxProps;
 }) {
-  /**
-   * Load ens data
-   */
-  const { data: ensName } = useEnsName({
-    address: stringToAddress(props.account) || ethers.constants.AddressZero,
-    chainId: 1,
-  });
-
-  /**
-   * Define name
-   */
   let name = addressToShortAddress(props.account);
   if (props.accountProfileUriData?.attributes[0].value) {
     name = props.accountProfileUriData.attributes[0].value + ` (${name})`;
-  } else if (ensName) {
-    name = ensName + ` (${name})`;
   }
 
   return (

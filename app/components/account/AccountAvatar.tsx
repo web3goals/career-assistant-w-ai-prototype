@@ -1,9 +1,7 @@
 import { ProfileUriData } from "@/types";
 import { Avatar, SxProps, Typography } from "@mui/material";
-import { ethers } from "ethers";
 import { emojiAvatarForAddress } from "utils/avatars";
-import { ipfsUriToHttpUri, stringToAddress } from "utils/converters";
-import { useEnsName, useEnsAvatar } from "wagmi";
+import { ipfsUriToHttpUri } from "utils/converters";
 
 /**
  * Component with account avatar.
@@ -15,26 +13,9 @@ export default function AccountAvatar(props: {
   emojiSize?: number;
   sx?: SxProps;
 }) {
-  /**
-   * Load ens data
-   */
-  const { data: ensName } = useEnsName({
-    address: stringToAddress(props.account) || ethers.constants.AddressZero,
-    chainId: 1,
-  });
-  const { data: ensAvatar } = useEnsAvatar({
-    name: ensName,
-    chainId: 1,
-  });
-
-  /**
-   * Define avatar
-   */
   let avatar = undefined;
   if (props.accountProfileUriData?.image) {
     avatar = ipfsUriToHttpUri(props.accountProfileUriData.image);
-  } else if (ensAvatar) {
-    avatar = ensAvatar;
   }
 
   return (
