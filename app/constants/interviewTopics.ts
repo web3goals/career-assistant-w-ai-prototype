@@ -3,7 +3,7 @@ import { InterviewTopic } from "@/types";
 export const INTERVIEW_TOPICS: InterviewTopic[] = [
   {
     id: "javascript",
-    title: "Interview w/ Bro about JavaScript",
+    title: "Interview w/ Mate about JavaScript",
     titleAlt: "JavaScript",
     image: "/images/javascript.png",
     imageAlt: "/images/javascriptAlt.png",
@@ -12,7 +12,7 @@ export const INTERVIEW_TOPICS: InterviewTopic[] = [
   },
   {
     id: "solidity",
-    title: "Interview w/ Bro about Solidity",
+    title: "Interview w/ Mate about Solidity",
     titleAlt: "Solidity",
     image: "/images/solidity.png",
     imageAlt: "/images/solidityAlt.png",
