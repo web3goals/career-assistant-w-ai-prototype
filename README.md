@@ -14,6 +14,10 @@ AI assistant for building a great resume and getting a dream job.
 
 ...
 
+## 📃 Artifacts
+
+...
+
 ## 🏗️ Architecture
 
 ...
