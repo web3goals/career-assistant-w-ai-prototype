@@ -14,25 +14,12 @@ async function main() {
     interviewContractAddress
   );
 
-  // const tableId = await interviewContract._tableId();
-  // console.log("👀 tableId", tableId);
-
   // const startTx = await interviewContract.start("sandbox");
   // console.log("👀 startTx", startTx);
   // await startTx.wait();
 
   // const balanceOf = await interviewContract.balanceOf(account.address);
   // console.log("👀 balanceOf", balanceOf);
-
-  // const saveMessagesTx = await interviewContract.saveMessages(
-  //   1,
-  //   [1686586355],
-  //   ["user"],
-  //   ["Hello world!"],
-  //   [1]
-  // );
-  // console.log("👀 saveMessagesTx", saveMessagesTx);
-  // await saveMessagesTx.wait();
 
   // const tokenURI = await interviewContract.tokenURI(1);
   // console.log("👀 tokenURI", tokenURI);

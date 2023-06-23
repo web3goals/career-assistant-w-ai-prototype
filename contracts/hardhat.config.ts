@@ -13,10 +13,12 @@ if (process.env.PRIVATE_KEY_2) {
 }
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.18",
+  solidity: {
+    version: "0.8.18",
+  },
   networks: {
-    calibration: {
-      url: process.env.RPC_URL_CALIBRATION || "",
+    auroraTestnet: {
+      url: process.env.RPC_URL_AURORA_TESTNET || "",
       accounts: accounts,
     },
   },
