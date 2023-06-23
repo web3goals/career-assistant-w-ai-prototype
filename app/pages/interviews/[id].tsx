@@ -19,11 +19,16 @@ import { DialogContext } from "@/context/dialog";
 import { interviewContractAbi } from "@/contracts/abi/interviewContract";
 import { profileContractAbi } from "@/contracts/abi/profileContract";
 import useError from "@/hooks/useError";
-import useInterviewPointsLoader from "@/hooks/useInterviewPointsLoader";
+import useIpfs from "@/hooks/useIpfs";
 import useToasts from "@/hooks/useToast";
 import useUriDataLoader from "@/hooks/useUriDataLoader";
 import { palette } from "@/theme/palette";
-import { InterviewMessage, InterviewTopic, ProfileUriData } from "@/types";
+import {
+  InterviewMessage,
+  InterviewMessagesUriData,
+  InterviewTopic,
+  ProfileUriData,
+} from "@/types";
 import { isAddressesEqual } from "@/utils/addresses";
 import {
   chainToSupportedChainId,
@@ -56,6 +61,23 @@ export default function Interview() {
   const { chain } = useNetwork();
 
   /**
+   * Define topic and messages
+   */
+  const { data: params } = useContractRead({
+    address: chainToSupportedChainInterviewContractAddress(chain),
+    abi: interviewContractAbi,
+    functionName: "getParams",
+    args: [BigInt(id?.toString() || 0)],
+    enabled: id !== undefined,
+  });
+  const topic = INTERVIEW_TOPICS.find(
+    (element) => element.id === params?.topic
+  );
+  const { data: messages } = useUriDataLoader<InterviewMessagesUriData>(
+    params?.messagesURI
+  );
+
+  /**
    * Define owner
    */
   const { data: owner } = useContractRead({
@@ -65,18 +87,6 @@ export default function Interview() {
     args: [BigInt(id?.toString() || 0)],
     enabled: id !== undefined,
   });
-
-  /**
-   * Define topic
-   */
-  const { data: topicId } = useContractRead({
-    address: chainToSupportedChainInterviewContractAddress(chain),
-    abi: interviewContractAbi,
-    functionName: "getTopic",
-    args: [BigInt(id?.toString() || 0)],
-    enabled: id !== undefined,
-  });
-  const topic = INTERVIEW_TOPICS.find((element) => element.id === topicId);
 
   /**
    * Define owner profile uri data
@@ -90,15 +100,19 @@ export default function Interview() {
   const { data: ownerProfileUriData } =
     useUriDataLoader<ProfileUriData>(ownerProfileUri);
 
+  const isDataLoaded =
+    id && params && topic && (messages || params?.messagesURI === "") && owner;
+
   return (
     <Layout maxWidth="md">
-      {id && owner && topic ? (
+      {isDataLoaded ? (
         <>
           <InteviewTopic
             id={id.toString()}
             topic={topic}
             owner={owner}
             ownerProfileUriData={ownerProfileUriData}
+            points={params.points.toString()}
           />
           <ThickDivider sx={{ mt: 8 }} />
           <InterviewMessages
@@ -106,6 +120,7 @@ export default function Interview() {
             topic={topic}
             owner={owner}
             ownerProfileUriData={ownerProfileUriData}
+            messages={messages}
           />
         </>
       ) : (
@@ -120,40 +135,37 @@ function InteviewTopic(props: {
   topic: InterviewTopic;
   owner: string;
   ownerProfileUriData?: ProfileUriData;
+  points: string;
 }) {
-  const { points } = useInterviewPointsLoader(props.id);
-
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
       <Avatar sx={{ width: 196, height: 196 }} src={props.topic.imageAlt} />
       <Typography variant="h4" fontWeight={700} textAlign="center" mt={3}>
         {props.topic.title}
       </Typography>
-      {points !== undefined && (
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          justifyContent="center"
-          alignItems="center"
-          spacing={1}
-          mt={1}
-        >
-          <Typography>Where</Typography>
-          <AccountAvatar
-            size={24}
-            emojiSize={12}
-            account={props.owner}
-            accountProfileUriData={props.ownerProfileUriData}
-          />
-          <AccountLink
-            account={props.owner}
-            accountProfileUriData={props.ownerProfileUriData}
-            variant="body1"
-          />
-          <Typography>
-            earned <strong>{points} XP</strong>
-          </Typography>
-        </Stack>
-      )}
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        justifyContent="center"
+        alignItems="center"
+        spacing={1}
+        mt={1}
+      >
+        <Typography>Where</Typography>
+        <AccountAvatar
+          size={24}
+          emojiSize={12}
+          account={props.owner}
+          accountProfileUriData={props.ownerProfileUriData}
+        />
+        <AccountLink
+          account={props.owner}
+          accountProfileUriData={props.ownerProfileUriData}
+          variant="body1"
+        />
+        <Typography>
+          earned <strong>{props.points} XP</strong>
+        </Typography>
+      </Stack>
     </Box>
   );
 }
@@ -163,6 +175,7 @@ function InterviewMessages(props: {
   topic: InterviewTopic;
   owner: string;
   ownerProfileUriData?: ProfileUriData;
+  messages?: InterviewMessage[];
 }) {
   const { showDialog, closeDialog } = useContext(DialogContext);
   const { address } = useAccount();
@@ -250,12 +263,9 @@ function InterviewMessages(props: {
   /**
    * Load messages
    */
-  async function loadMessages() {
+  useEffect(() => {
     setMessages(undefined);
-    // Define messages
-    const messages: InterviewMessage[] = [];
-    // Add system messages
-    messages.push({
+    const systemMessage: InterviewMessage = {
       id: `${props.id}_0`,
       interview: props.id.toString(),
       timestamp: 0,
@@ -263,38 +273,12 @@ function InterviewMessages(props: {
       content: props.topic.prompt,
       points: 0,
       isSaved: true,
-    });
-    // Add messages loaded from tableland
-    try {
-      const response = await axios.get(
-        `https://testnets.tableland.network/api/v1/query?statement=select%20%2A%20from%20${process.env.NEXT_PUBLIC_TABLELAND_TABLE}%20where%20interview%20%3D%20${props.id}`
-      );
-      for (const message of response.data) {
-        messages.push({
-          id: message.id,
-          interview: String(message.interview),
-          timestamp: message.timestamp,
-          role: message.role,
-          content: atob(message.content),
-          points: message.points,
-          isSaved: true,
-        });
-      }
-    } catch (error: any) {
-      if (error?.response?.data?.message !== "Row not found") {
-        handleError(error, true);
-      }
-    }
-    setMessages(messages);
-  }
-
-  /**
-   * Load messages
-   */
-  useEffect(() => {
-    loadMessages();
+    };
+    setMessages(
+      props.messages ? [systemMessage, ...props.messages] : [systemMessage]
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.id]);
+  }, [props.id, props.messages]);
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center">
@@ -350,10 +334,8 @@ function InterviewMessages(props: {
                       <InterviewSaveMessagesDialog
                         id={props.id}
                         messages={messages}
-                        onSaving={() => setIsFormSubmitting(true)}
                         onSaved={(messages) => {
                           setMessages(messages);
-                          setIsFormSubmitting(false);
                           closeDialog?.();
                         }}
                         onClose={closeDialog}
@@ -442,33 +424,29 @@ function InterviewMessageCard(props: {
 function InterviewSaveMessagesDialog(props: {
   id: string;
   messages: InterviewMessage[];
-  onSaving: () => void;
   onSaved: (messages: InterviewMessage[]) => void;
   isClose?: boolean;
   onClose?: Function;
 }) {
   const { chain } = useNetwork();
+  const { handleError } = useError();
   const { showToastSuccess, showToastError } = useToasts();
+  const { uploadJsonToIpfs } = useIpfs();
+
+  /**
+   * Form states
+   */
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+  const [messages, setMessages] = useState<InterviewMessage[] | undefined>(
+    undefined
+  );
+  const [messagesPoints, setMessagesPoints] = useState(0);
+  const [messagesUri, setMessagesUri] = useState("");
 
   /**
    * Dialog states
    */
   const [isOpen, setIsOpen] = useState(!props.isClose);
-
-  /**
-   * Define params of not saved messages
-   */
-  const notSavedMessages = props.messages.filter((message) => !message.isSaved);
-  const notSavedMessageTimestamps = notSavedMessages.map((message) =>
-    BigInt(message.timestamp)
-  );
-  const notSavedMessageRoles = notSavedMessages.map((message) => message.role);
-  const notSavedMessageContents = notSavedMessages.map((message) =>
-    btoa(message.content)
-  );
-  const notSavedMessagePoints = notSavedMessages.map((message) =>
-    BigInt(message.points)
-  );
 
   /**
    * Contract states
@@ -478,13 +456,7 @@ function InterviewSaveMessagesDialog(props: {
       address: chainToSupportedChainInterviewContractAddress(chain),
       abi: interviewContractAbi,
       functionName: "saveMessages",
-      args: [
-        BigInt(props.id),
-        notSavedMessageTimestamps,
-        notSavedMessageRoles,
-        notSavedMessageContents,
-        notSavedMessagePoints,
-      ],
+      args: [BigInt(props.id), BigInt(messagesPoints), messagesUri],
       chainId: chainToSupportedChainId(chain),
       onError(error: any) {
         showToastError(error);
@@ -500,7 +472,11 @@ function InterviewSaveMessagesDialog(props: {
       hash: contractWriteData?.hash,
     });
 
-  const isLoading = isContractWriteLoading || isTransactionLoading;
+  /**
+   * Form states
+   */
+  const isLoading =
+    isFormSubmitting || isContractWriteLoading || isTransactionLoading;
   const isDisabled =
     isLoading ||
     isTransactionSuccess ||
@@ -511,27 +487,56 @@ function InterviewSaveMessagesDialog(props: {
    * Function to close dialog
    */
   async function close() {
-    setIsOpen(false);
-    props.onClose?.();
+    if (!isLoading) {
+      setIsOpen(false);
+      props.onClose?.();
+    }
   }
 
-  useEffect(() => {
-    if (isLoading) {
-      props.onSaving();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (isTransactionSuccess) {
-      showToastSuccess("Messages are saved");
+  /**
+   * Upload messages to IPFS and calculate message points
+   */
+  async function submit() {
+    try {
+      setIsFormSubmitting(true);
       const messages = props.messages.map((message) =>
         !message.isSaved ? { ...message, isSaved: true } : message
       );
+      const messagesPoints = messages.reduce(
+        (sum, message) => sum + message.points,
+        0
+      );
+      const { uri: messagesUri } = await uploadJsonToIpfs(messages);
+      setMessages(messages);
+      setMessagesPoints(messagesPoints);
+      setMessagesUri(messagesUri);
+    } catch (error: any) {
+      handleError(error, true);
+    }
+  }
+
+  /**
+   * Write data to contract if form was submitted
+   */
+  useEffect(() => {
+    if (messagesUri !== "" && contractWrite && !isContractWriteLoading) {
+      contractWrite?.();
+      setMessagesUri("");
+      setIsFormSubmitting(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messagesUri, contractWrite, isContractWriteLoading]);
+
+  /**
+   * Display success message if messages are saved
+   */
+  useEffect(() => {
+    if (isTransactionSuccess && messages) {
+      showToastSuccess("Messages are saved, result will be updated soon");
       props.onSaved(messages);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTransactionSuccess]);
+  }, [isTransactionSuccess, messages]);
 
   return (
     <Dialog open={isOpen} onClose={close} maxWidth="sm" fullWidth>
@@ -547,7 +552,7 @@ function InterviewSaveMessagesDialog(props: {
           type="submit"
           disabled={isDisabled}
           loading={isLoading}
-          onClick={() => contractWrite?.()}
+          onClick={() => submit()}
           sx={{ mt: 4 }}
         >
           Submit

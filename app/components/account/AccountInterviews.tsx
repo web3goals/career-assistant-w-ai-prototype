@@ -1,6 +1,5 @@
 import { INTERVIEW_TOPICS } from "@/constants/interviewTopics";
 import { interviewContractAbi } from "@/contracts/abi/interviewContract";
-import useInterviewPointsLoader from "@/hooks/useInterviewPointsLoader";
 import useToasts from "@/hooks/useToast";
 import { theme } from "@/theme";
 import { palette } from "@/theme/palette";
@@ -69,9 +68,15 @@ function AccountInterview(props: {
     ],
   });
 
-  const { points } = useInterviewPointsLoader(id?.toString());
+  const { data: params } = useContractRead({
+    address: chainToSupportedChainInterviewContractAddress(chain),
+    abi: interviewContractAbi,
+    functionName: "getParams",
+    args: [BigInt(id?.toString() || 0)],
+    enabled: id !== undefined,
+  });
 
-  if (id === undefined || points === undefined) {
+  if (id === undefined || params === undefined) {
     return <FullWidthSkeleton />;
   }
 
@@ -97,7 +102,7 @@ function AccountInterview(props: {
           {props.topic.title}
         </Typography>
         <Typography mt={1}>
-          Earned <strong>{points} experience points</strong>
+          Earned <strong>{params.points.toString()} experience points</strong>
         </Typography>
         {/* Open button */}
         {id !== BigInt(0) && (

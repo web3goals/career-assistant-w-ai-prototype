@@ -5,17 +5,6 @@ export const interviewContractAbi = [
     type: "constructor",
   },
   {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "chainid",
-        type: "uint256",
-      },
-    ],
-    name: "ChainNotSupported",
-    type: "error",
-  },
-  {
     anonymous: false,
     inputs: [
       {
@@ -108,19 +97,6 @@ export const interviewContractAbi = [
     ],
     name: "Transfer",
     type: "event",
-  },
-  {
-    inputs: [],
-    name: "_tableId",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
   },
   {
     inputs: [
@@ -236,12 +212,34 @@ export const interviewContractAbi = [
         type: "uint256",
       },
     ],
-    name: "getTopic",
+    name: "getParams",
     outputs: [
       {
-        internalType: "string",
+        components: [
+          {
+            internalType: "uint256",
+            name: "startedTimestamp",
+            type: "uint256",
+          },
+          {
+            internalType: "string",
+            name: "topic",
+            type: "string",
+          },
+          {
+            internalType: "uint256",
+            name: "points",
+            type: "uint256",
+          },
+          {
+            internalType: "string",
+            name: "messagesURI",
+            type: "string",
+          },
+        ],
+        internalType: "struct Interview.Params",
         name: "",
-        type: "string",
+        type: "tuple",
       },
     ],
     stateMutability: "view",
@@ -406,24 +404,14 @@ export const interviewContractAbi = [
         type: "uint256",
       },
       {
-        internalType: "uint256[]",
-        name: "messageTimestamps",
-        type: "uint256[]",
+        internalType: "uint256",
+        name: "points",
+        type: "uint256",
       },
       {
-        internalType: "string[]",
-        name: "messageRoles",
-        type: "string[]",
-      },
-      {
-        internalType: "string[]",
-        name: "messageContents",
-        type: "string[]",
-      },
-      {
-        internalType: "uint256[]",
-        name: "messagePoints",
-        type: "uint256[]",
+        internalType: "string",
+        name: "messagesURI",
+        type: "string",
       },
     ],
     name: "saveMessages",

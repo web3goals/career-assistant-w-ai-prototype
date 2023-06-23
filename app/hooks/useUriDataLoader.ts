@@ -1,4 +1,4 @@
-import { ProfileUriData } from "@/types";
+import { InterviewMessagesUriData, ProfileUriData } from "@/types";
 import useError from "hooks/useError";
 import useIpfs from "hooks/useIpfs";
 import { useEffect, useState } from "react";
@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 /**
  * Load uri data from ipfs.
  */
-export default function useUriDataLoader<T extends ProfileUriData>(
+export default function useUriDataLoader<
+  T extends ProfileUriData | InterviewMessagesUriData
+>(
   uri?: string
 ): {
   data: T | undefined;

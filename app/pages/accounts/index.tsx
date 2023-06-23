@@ -6,7 +6,6 @@ import { CardBox, FullWidthSkeleton } from "@/components/styled";
 import { INTERVIEW_TOPICS } from "@/constants/interviewTopics";
 import { interviewContractAbi } from "@/contracts/abi/interviewContract";
 import { profileContractAbi } from "@/contracts/abi/profileContract";
-import useInterviewPointsLoader from "@/hooks/useInterviewPointsLoader";
 import useUriDataLoader from "@/hooks/useUriDataLoader";
 import { palette } from "@/theme/palette";
 import { ProfileUriData } from "@/types";
@@ -113,18 +112,26 @@ function AccountCard(props: { address?: string; sx?: SxProps }) {
   /**
    * Define interview points
    */
-  const { points: interview0points } = useInterviewPointsLoader(
-    interview0id?.toString()
-  );
-  const { points: interview1points } = useInterviewPointsLoader(
-    interview1id?.toString()
-  );
+  const { data: interview0Params } = useContractRead({
+    address: chainToSupportedChainInterviewContractAddress(chain),
+    abi: interviewContractAbi,
+    functionName: "getParams",
+    args: [BigInt(interview0id?.toString() || 0)],
+    enabled: interview0id !== undefined,
+  });
+  const { data: interview1Params } = useContractRead({
+    address: chainToSupportedChainInterviewContractAddress(chain),
+    abi: interviewContractAbi,
+    functionName: "getParams",
+    args: [BigInt(interview1id?.toString() || 0)],
+    enabled: interview1id !== undefined,
+  });
 
   if (!props.address) {
     return <></>;
   }
 
-  if (interview0points === undefined || interview1points === undefined) {
+  if (interview0Params === undefined || interview1Params === undefined) {
     return <FullWidthSkeleton />;
   }
 
@@ -152,14 +159,16 @@ function AccountCard(props: { address?: string; sx?: SxProps }) {
         )}
         <Stack direction="row" spacing={2} mt={2}>
           <Typography variant="body2" fontWeight={700} color={palette.yellow}>
-            {INTERVIEW_TOPICS[0].titleAlt} {interview0points} XP
+            {INTERVIEW_TOPICS[0].titleAlt} {interview0Params.points.toString()}{" "}
+            XP
           </Typography>
           <Typography
             variant="body2"
             fontWeight={700}
             color={palette.purpleLight}
           >
-            {INTERVIEW_TOPICS[1].titleAlt} {interview1points} XP
+            {INTERVIEW_TOPICS[1].titleAlt} {interview1Params.points.toString()}{" "}
+            XP
           </Typography>
         </Stack>
       </Box>

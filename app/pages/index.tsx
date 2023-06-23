@@ -22,7 +22,7 @@ export default function Landing() {
           alignItems: "center",
         }}
       >
-        <Box width={{ xs: "100%", md: "60%" }}>
+        <Box width={{ xs: "100%", md: "50%" }}>
           <Image
             src="/images/mates.png"
             alt="Mates"

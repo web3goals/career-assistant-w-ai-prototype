@@ -31,3 +31,5 @@ export type ProfileUriData = {
     { trait_type: "resume"; value: string }
   ];
 };
+
+export type InterviewMessagesUriData = InterviewMessage[];
