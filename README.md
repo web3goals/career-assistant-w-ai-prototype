@@ -20,13 +20,13 @@ Aurora mainnet and testnet are used by the project as a blockchain for smart con
 
 Aurora mainnet contracts:
 
-- Interview (ERC721) - 0x96E6AF6E9e400d0Cd6a4045F122df22BCaAAca59
-- Profile (ERC721) - 0x02008a8DBc938bd7930bf370617065B6B0c1221a
+- Profile (ERC721) - 0x96E6AF6E9e400d0Cd6a4045F122df22BCaAAca59
+- Interview (ERC721) - 0x02008a8DBc938bd7930bf370617065B6B0c1221a
 
 Aurora testnet contracts:
 
-- Interview (ERC721) - 0x96E6AF6E9e400d0Cd6a4045F122df22BCaAAca59
-- Profile (ERC721) - 0x1e4712A93beEc0aa26151CF44061eE91DD56f921
+- Profile (ERC721) - 0x96E6AF6E9e400d0Cd6a4045F122df22BCaAAca59
+- Interview (ERC721) - 0x1e4712A93beEc0aa26151CF44061eE91DD56f921
 
 ## 🚀 Plans
 
