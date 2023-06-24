@@ -20,4 +20,4 @@ https://career-mate-w-ai-app.vercel.app/
 
 ## 🏗️ Architecture
 
-...
+![Architecture](/architecture.png)
