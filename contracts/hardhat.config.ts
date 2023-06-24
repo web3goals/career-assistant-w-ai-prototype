@@ -21,6 +21,10 @@ const config: HardhatUserConfig = {
       url: process.env.RPC_URL_AURORA_TESTNET || "",
       accounts: accounts,
     },
+    auroraMainnet: {
+      url: process.env.RPC_URL_AURORA_MAINNET || "",
+      accounts: accounts,
+    },
   },
 };
 
