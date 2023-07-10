@@ -17,12 +17,8 @@ const config: HardhatUserConfig = {
     version: "0.8.18",
   },
   networks: {
-    auroraTestnet: {
-      url: process.env.RPC_URL_AURORA_TESTNET || "",
-      accounts: accounts,
-    },
-    auroraMainnet: {
-      url: process.env.RPC_URL_AURORA_MAINNET || "",
+    xdcApothem: {
+      url: process.env.RPC_URL_XDC_APOTHEM || "",
       accounts: accounts,
     },
   },

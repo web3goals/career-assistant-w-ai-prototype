@@ -1,4 +1,4 @@
-import { aurora, auroraTestnet, Chain } from "wagmi/chains";
+import { Chain, xdcTestnet } from "wagmi/chains";
 import { stringToAddress } from "./converters";
 
 interface ChainConfig {
@@ -15,30 +15,15 @@ interface ChainConfig {
 export function getSupportedChainConfigs(): ChainConfig[] {
   const chainConfigs: ChainConfig[] = [];
   if (
-    process.env.NEXT_PUBLIC_AURORA_TESTNET_PROFILE_CONTRACT_ADDRESS &&
-    process.env.NEXT_PUBLIC_AURORA_TESTNET_INTERVIEW_CONTRACT_ADDRESS
+    process.env.NEXT_PUBLIC_XDC_APOTHEM_PROFILE_CONTRACT_ADDRESS &&
+    process.env.NEXT_PUBLIC_XDC_APOTHEM_INTERVIEW_CONTRACT_ADDRESS
   ) {
     chainConfigs.push({
-      chain: auroraTestnet,
+      chain: xdcTestnet,
       contractAddresses: {
-        profile:
-          process.env.NEXT_PUBLIC_AURORA_TESTNET_PROFILE_CONTRACT_ADDRESS,
+        profile: process.env.NEXT_PUBLIC_XDC_APOTHEM_PROFILE_CONTRACT_ADDRESS,
         interview:
-          process.env.NEXT_PUBLIC_AURORA_TESTNET_INTERVIEW_CONTRACT_ADDRESS,
-      },
-    });
-  }
-  if (
-    process.env.NEXT_PUBLIC_AURORA_MAINNET_PROFILE_CONTRACT_ADDRESS &&
-    process.env.NEXT_PUBLIC_AURORA_MAINNET_INTERVIEW_CONTRACT_ADDRESS
-  ) {
-    chainConfigs.push({
-      chain: aurora,
-      contractAddresses: {
-        profile:
-          process.env.NEXT_PUBLIC_AURORA_MAINNET_PROFILE_CONTRACT_ADDRESS,
-        interview:
-          process.env.NEXT_PUBLIC_AURORA_MAINNET_INTERVIEW_CONTRACT_ADDRESS,
+          process.env.NEXT_PUBLIC_XDC_APOTHEM_INTERVIEW_CONTRACT_ADDRESS,
       },
     });
   }
