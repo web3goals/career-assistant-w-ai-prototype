@@ -6,18 +6,34 @@ AI assistant for building a great resume and getting a dream job.
 
 https://career-assistant-w-ai-app.vercel.app/
 
-## ✨ Description
+## ✨ Inspiration
 
 ...
 
-## ⚒️ How it's made
+## 🔥 What it does
 
 ...
 
-## 🚀 Plans
+## ⚒️ How I built it
+
+...
+
+## Challenges I ran into
+
+...
+
+## Accomplishments that I'm proud of
+
+...
+
+## 🧠 What I learned
+
+...
+
+## 🚀 What's next
 
 ...
 
 ## 🏗️ Architecture
 
-...
+![Architecture](/architecture.png)
