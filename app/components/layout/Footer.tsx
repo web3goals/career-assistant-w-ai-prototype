@@ -28,7 +28,7 @@ function Copyright(props: { sx?: SxProps }) {
         fontWeight={700}
         textAlign="center"
       >
-        Career Mate w/ AI © 2023
+        Career Assistant w/ AI © 2023
       </Typography>
       <Typography
         color="primary.contrastText"

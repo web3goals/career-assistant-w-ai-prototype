@@ -18,7 +18,7 @@ export default function Layout(props: {
     <Box>
       <CssBaseline />
       <Head>
-        <title>Career Mate w/ AI</title>
+        <title>Career Assistant w/ AI</title>
         <meta name="viewport" content="initial-scale=1, width=device-width" />
       </Head>
       <Navigation />

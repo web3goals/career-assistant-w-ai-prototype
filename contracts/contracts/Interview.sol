@@ -24,7 +24,7 @@ contract Interview is ERC721, Ownable {
     Counters.Counter private _counter;
     mapping(uint => Params) private _params;
 
-    constructor() ERC721("Career Mate w/ AI - Interviews", "CMI") {}
+    constructor() ERC721("Career Assistant w/ AI - Interviews", "CMI") {}
 
     /// ***************************
     /// ***** OWNER FUNCTIONS *****
@@ -113,7 +113,7 @@ contract Interview is ERC721, Ownable {
                     "data:application/json;base64,",
                     Base64.encode(
                         abi.encodePacked(
-                            '{"name":"Career Mate w/ AI - Interview #',
+                            '{"name":"Career Assistant w/ AI - Interview #',
                             Strings.toString(tokenId),
                             '","image":"data:image/svg+xml;base64,',
                             Base64.encode(abi.encodePacked(_imageSVG)),

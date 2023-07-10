@@ -9,7 +9,7 @@ export default async function handler(
     const { data } = await axios.post(
       "https://iriko.testing.huddle01.com/api/v1/create-room",
       {
-        title: "Career Mate w/ AI",
+        title: "Career Assistant w/ AI",
       },
       {
         headers: {

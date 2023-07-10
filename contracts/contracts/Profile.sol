@@ -16,7 +16,7 @@ contract Profile is ERC721URIStorage, Ownable {
     Counters.Counter private _counter;
     mapping(address => uint256) private _owners;
 
-    constructor() ERC721("Career Mate w/ AI - Profiles", "CMP") {}
+    constructor() ERC721("Career Assistant w/ AI - Profiles", "CMP") {}
 
     /// **************************
     /// ***** USER FUNCTIONS *****

@@ -24,8 +24,8 @@ export default function Landing() {
       >
         <Box width={{ xs: "100%", md: "50%" }}>
           <Image
-            src="/images/mates.png"
-            alt="Mates"
+            src="/images/handshake.png"
+            alt="Handshake"
             width="100"
             height="100"
             sizes="100vw"

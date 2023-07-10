@@ -404,7 +404,7 @@ function InterviewMessageCard(props: {
       <Box width={1} ml={1.5} display="flex" flexDirection="column">
         {props.message.role === "assistant" ? (
           <Typography fontWeight={700} variant="body2">
-            Career Mate w/ AI
+            Career Assistant w/ AI
           </Typography>
         ) : (
           <AccountLink

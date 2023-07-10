@@ -51,7 +51,7 @@ function Logo(props: { sx?: SxProps }) {
           fontWeight={700}
           display={{ xs: "none", md: "flex" }}
         >
-          💪 Career Mate w/ AI
+          💪 Career Assistant w/ AI
         </MuiLink>
       </Link>
       <Link href="/" passHref legacyBehavior>
@@ -61,7 +61,7 @@ function Logo(props: { sx?: SxProps }) {
           fontWeight={700}
           display={{ xs: "flex", md: "none" }}
         >
-          💪 Mate
+          💪 Assistant
         </MuiLink>
       </Link>
     </Box>
